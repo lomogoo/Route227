@@ -539,3 +539,13 @@ function initializeNotificationButton() {
 /**
  * ▲▲▲ [変更ここまで] ▲▲▲
  */
+// PWA判定して body にクラス追加
+window.addEventListener('DOMContentLoaded', () => {
+  const isPWA =
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true;
+
+  if (isPWA) {
+    document.body.classList.add('pwa');
+  }
+});
