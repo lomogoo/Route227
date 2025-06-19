@@ -1,4 +1,5 @@
 /* 1) Supabase 初期化 */
+
 const { createClient } = window.supabase;
 const db = createClient(
   'https://hccairtzksnnqdujalgv.supabase.co',
