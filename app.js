@@ -480,46 +480,62 @@ function handleUrlHash() {
 }
 
 /**
+ * ▼▼▼ [変更ここから] 通知設定ボタンの初期化関数を全面的に刷新 ▼▼▼
  * 通知設定ボタンを初期化し、状態に応じてアイコンを更新する関数
  */
 function initializeNotificationButton() {
   const container = document.getElementById('notification-button-container');
   if (!container) return;
 
+  // 各状態に対応するSVGアイコン
   const icons = {
     granted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
     denied: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
-    default: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`
+    default: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
   };
 
-  const updateButtonState = async () => {
-    // ▼▼▼ [変更点] awaitを削除 ▼▼▼
-    OneSignal.push(async () => {
-      const permission = await OneSignal.getNotificationPermission();
-      let iconHtml = '';
-      let clickHandler = () => {};
+  const updateButton = (permission) => {
+    let iconHtml = '';
+    let clickHandler = () => {};
 
-      switch (permission) {
-        case 'granted':
-          iconHtml = icons.granted;
-          clickHandler = () => showNotification('設定確認', 'プッシュ通知は既にオンになっています。');
-          break;
-        case 'denied':
-          iconHtml = icons.denied;
-          clickHandler = () => showNotification('設定の変更方法', '通知がブロックされています。ブラウザの設定から変更してください。');
-          break;
-        default: // 'default'
-          iconHtml = icons.default;
-          clickHandler = async () => {
-            await OneSignal.Slidedown.prompt();
-            updateButtonState();
-          };
-          break;
-      }
-      container.innerHTML = `<button>${iconHtml}</button>`;
-      container.querySelector('button')?.addEventListener('click', clickHandler);
+    // 以前のクラスを削除し、現在の状態クラスを追加
+    container.classList.remove('granted', 'denied', 'default');
+    container.classList.add(permission);
+
+    switch (permission) {
+      case 'granted':
+        iconHtml = icons.granted;
+        clickHandler = () => showNotification('設定確認', 'プッシュ通知は既にオンになっています。');
+        break;
+      case 'denied':
+        iconHtml = icons.denied;
+        clickHandler = () => showNotification('設定の変更方法', '通知がブロックされています。ブラウザの設定から変更してください。');
+        break;
+      default: // 'default'
+        iconHtml = icons.default;
+        clickHandler = () => {
+          // OneSignalのスライドダウンプロンプトを手動で表示
+          window.OneSignal.Slidedown.prompt();
+        };
+        break;
+    }
+    container.innerHTML = `<button type="button" aria-label="通知設定">${iconHtml}</button>`;
+    container.querySelector('button')?.addEventListener('click', clickHandler);
+  };
+
+  // OneSignal SDK の準備ができたら実行
+  window.OneSignalDeferred.push(function(OneSignal) {
+    // 許可状態が変更されたら、リアルタイムでボタンの表示を更新
+    OneSignal.on('permissionChange', (permission) => {
+      updateButton(permission);
     });
-  };
-  
-  updateButtonState();
+    
+    // 初期表示のために、現在の許可状態を取得してボタンを生成
+    OneSignal.getNotificationPermission().then(permission => {
+      updateButton(permission);
+    });
+  });
 }
+/**
+ * ▲▲▲ [変更ここまで] ▲▲▲
+ */
