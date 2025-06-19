@@ -1,5 +1,3 @@
-importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-
 // service-worker.js
 self.addEventListener('install', (e) => {
   console.log('[Service Worker] Installed');
