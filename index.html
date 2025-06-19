@@ -20,17 +20,15 @@
     await OneSignal.init({
       appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
       
-      // ▼▼▼ [変更点] 自動プロンプトを明確に無効化 ▼▼▼
-      autoPrompt: false,
-
-      // ベル型ボタンは無効のまま
+      // ベル型ボタンは自前で実装するため無効化
       notifyButton: {
         enable: false
       },
-      // プロンプトの文言設定は残しておきます（手動で呼び出す際に使われます）
+      
+      // ▼▼▼ [重要] 自動プロンプトを無効化します ▼▼▼
       promptOptions: {
         slidedown: {
-          enabled: true,
+          enabled: false, // trueからfalseに変更
           actionMessage: "新しい記事やお得な情報をプッシュ通知でお知らせします！",
           acceptButtonText: "はい、通知を受け取る",
           cancelButtonText: "いいえ、結構です",
