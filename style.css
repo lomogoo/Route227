@@ -1,0 +1,536 @@
+/* 1. Reset & Base Styles */
+:root {
+  --font-body: 'Noto Sans JP', sans-serif;
+  --font-display: 'Poppins', sans-serif;
+  
+  --color-text: #264653;
+  --color-bg: #F4F1DE;
+  --color-primary: #E76F51;
+  --color-primary-dark: #D76041;
+  --color-secondary: #F4A261;
+  --color-accent: #E9C46A;
+  --color-brand: #2A9D8F;
+  --color-surface: #FFFFFF;
+  --color-border: #E0E0E0;
+
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --radius-md: 12px;
+  --radius-lg: 20px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 80px; /* Footer height */
+}
+
+/* 2. App Loader */
+.app-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-bg);
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  pointer-events: auto;
+}
+.app-loader:not(.active) {
+  opacity: 0;
+  pointer-events: none;
+}
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--color-accent);
+  border-top: 5px solid var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* 3. Layout & Header */
+#app-root {
+  max-width: 640px;
+  margin: 0 auto;
+  background-color: var(--color-surface);
+  min-height: 100vh;
+  box-shadow: var(--shadow-md);
+}
+.app-header {
+  background: var(--color-brand);
+  color: white;
+  padding: 16px;
+}
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-icon { font-size: 24px; }
+.logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+#user-status .btn {
+  background-color: transparent;
+  border: 1px solid rgba(255,255,255,0.5);
+  color: white;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* 4. Footer Navigation */
+.footer-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 640px;
+  margin: 0 auto;
+  height: 65px;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-around;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+}
+.nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  flex-grow: 1;
+  text-decoration: none;
+  color: #6c757d;
+  font-size: 10px;
+  gap: 2px;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.nav-link.active {
+  color: var(--color-primary);
+  transform: translateY(-2px);
+}
+.nav-link svg {
+  transition: all 0.2s ease;
+}
+.nav-link.active svg {
+  stroke: var(--color-primary);
+}
+
+
+/* 5. Sections & Content */
+.section { display: none; padding: 20px 16px; }
+.section.active { display: block; animation: fadeIn 0.5s ease; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+.card-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.card-header h2 { font-family: var(--font-display); font-size: 22px; margin-bottom: 4px; }
+.card-header p { font-size: 14px; color: #6c757d; margin: 0;}
+.card-body { padding: 20px; }
+.card-footer { padding: 20px; background-color: #f8f9fa; border-top: 1px solid var(--color-border); }
+
+
+/* 6. Buttons & Forms */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 12px 24px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.btn-primary { background-color: var(--color-primary); color: white; }
+.btn-primary:hover { background-color: var(--color-primary-dark); }
+.btn-secondary { background-color: var(--color-border); color: var(--color-text); }
+.btn-secondary:hover { background-color: #d3d3d3; }
+.btn:disabled { background-color: #e9ecef; color: #adb5bd; cursor: not-allowed; }
+.btn-full { width: 100%; }
+
+input[type="email"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  margin-bottom: 16px;
+}
+
+/* 7. Feed Page */
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.category-tab {
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 99px;
+  background: var(--color-bg);
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.category-tab.active { background: var(--color-accent); color: var(--color-text); font-weight: 700; }
+.article-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    cursor: pointer;
+}
+.articles-container .card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.articles-container .card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+.articles-container .card-body { padding: 16px; }
+.articles-container .article-title { font-family: var(--font-display); font-size: 18px; margin-bottom: 8px; }
+.articles-container .article-excerpt { font-size: 14px; color: #6c757d; }
+.articles-container img { width: 100%; height: 180px; object-fit: cover; }
+
+
+/* 8. Stamp Card Page */
+.stamp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.stamp {
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background-color: var(--color-bg);
+  border: 2px dashed var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+.stamp .stamp-number { font-family: var(--font-display); font-size: 24px; color: var(--color-border); }
+.stamp.active {
+  border-style: solid;
+  border-color: var(--color-brand);
+  background-color: var(--color-accent);
+  transform: scale(1.05);
+  animation: stamp-pop 0.4s ease-out;
+}
+.stamp.active .stamp-number { display: none; }
+.stamp.active[data-stamp-id="1"], .stamp.active[data-stamp-id="2"], .stamp.active[data-stamp-id="4"], .stamp.active[data-stamp-id="5"] {
+  background-image: url('assets/logo.png');
+  background-size: 60%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.stamp.active[data-stamp-id="3"], .stamp.active[data-stamp-id="6"] {
+  background-image: url('assets/truck.png');
+  background-size: 60%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+@keyframes stamp-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  80% { transform: scale(1.1); }
+  100% { transform: scale(1.05); opacity: 1; }
+}
+
+.rewards-card-container .card-body { padding: 12px; }
+.reward-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  transition: background-color 0.2s ease;
+}
+.reward-item:not(:last-child) { border-bottom: 1px solid var(--color-border); }
+.reward-icon { font-size: 28px; }
+.reward-info { flex-grow: 1; }
+.reward-info h3 { font-size: 16px; font-weight: 700; }
+.reward-info p { font-size: 12px; color: #6c757d; margin: 0; }
+.reward-item .btn { padding: 8px 16px; font-size: 12px; }
+.reward-item.available { background-color: #fffbeb; }
+
+/* 9. Modals */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.modal.active { opacity: 1; pointer-events: auto; }
+.modal-content {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.95);
+  transition: transform 0.3s ease;
+}
+.modal.active .modal-content { transform: scale(1); }
+.modal-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-header h3 { font-size: 18px; }
+.close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
+.modal-body { padding: 20px; }
+.modal-body p { font-size: 14px; margin-bottom: 16px; }
+#qr-reader { border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+
+/* 10. Summary Modal */
+.summary-modal-content {
+  padding: 0;
+  overflow: hidden;
+}
+.summary-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: rgba(0,0,0,0.5);
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  line-height: 1;
+  z-index: 10;
+  border: none;
+}
+.summary-image {
+  width: 100%;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--color-border);
+}
+.summary-text-content {
+  padding: 24px;
+}
+#summary-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+#summary-bullets {
+  list-style-type: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+#summary-bullets li {
+  font-size: 15px;
+  line-height: 1.7;
+  padding-left: 20px;
+  position: relative;
+}
+#summary-bullets li:not(:last-child) {
+  margin-bottom: 12px;
+}
+#summary-bullets li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-weight: bold;
+}
+#summary-read-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* 11. Load More Button */
+.load-more-container {
+  padding: 20px 0;
+  text-align: center;
+}
+#load-more-btn {
+  display: none; 
+}
+#load-more-btn.visible {
+  display: inline-flex;
+}
+
+/* 12. Two-Step Auth Styles */
+.form-message {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  height: 1.2em;
+  color: var(--color-primary);
+}
+.hidden {
+  display: none !important;
+}
+#otp-email-display {
+  word-break: break-all;
+}
+#otp-code {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 20px;
+  text-align: center;
+  letter-spacing: 0.5em;
+  margin-bottom: 16px;
+}
+.btn-link {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #6c757d;
+  text-decoration: underline;
+  font-size: 12px;
+  cursor: pointer;
+  margin-top: 16px;
+  text-align: center;
+}
+
+
+/* style.css の末尾にこのコードを追加 */
+
+/* 12. Schedule Image */
+.schedule-image {
+  display: block; /* 画像下の余分な余白を消す */
+  max-width: 100%; /* 親要素の幅以上に大きくならないようにする */
+  height: auto;   /* 画像の縦横比を維持する */
+  margin: 0 auto; /* 中央揃えにする */
+  border-radius: var(--radius-md); /* 画像の角を少し丸める */
+}
+
+/* style.css のロゴ画像のスタイルを以下に置き換え */
+
+/* ロゴ画像のサイズ調整（より強力な指定） */
+.app-header .logo .logo-icon {
+  height: 28px; /* 画像の高さを28pxに指定 */
+  width: auto;  /* 横幅は縦横比を維持して自動調整 */
+  vertical-align: middle; /* 隣のテキストとの縦位置を微調整 */
+}
+
+/* === ここからコピー === */
+
+/**
+ * デザイン改修で気に入った部分を適用するカスタムスタイル
+ * 元のstyle.cssの一番下に追加してください
+ */
+
+/* 1. 全体の背景色とヘッダーの背景色を更新 */
+
+/* :rootから新しい色定義を拝借（しなくても動きますが、後で調整しやすいように） */
+:root {
+  --color-new-bg: #F2CC8F;
+  --color-new-gradient-start: #F4F1DE;
+  --color-new-gradient-end: #E07A5F;
+  --color-new-tab-active: #81B29A;
+}
+
+body {
+  /* 新しい暖かい背景色 */
+  background-color: var(--color-new-bg);
+  /* 淡いグラデーションとテクスチャを追加して深みを出す */
+  background-image: linear-gradient(170deg, var(--color-new-gradient-start) 0%, var(--color-new-gradient-end) 200%), url('https://www.transparenttextures.com/patterns/subtle-zebra-3d.png');
+}
+
+#app-root {
+  /* 全体の背景が見えるように、メインコンテンツの背景を透明に */
+  background-color: transparent;
+  box-shadow: none; /* 背景が一体化するので影は不要に */
+}
+
+.app-header {
+  /* ヘッダーも透明にして、背景との一体感を出す */
+  background: transparent;
+  /* ヘッダー内のテキストやアイコンが見やすいように、少しだけ影をつける */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 2. 上部タブの色使いを更新 */
+.category-tab {
+  /* 半透明の背景で軽やかな印象に */
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(2px); /* すりガラス効果（お好みで） */
+  color: var(--color-text);
+  font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.5); /* 輪郭を少しだけはっきりと */
+}
+
+.category-tab.active {
+  /* 新しいテーマのセカンダリカラー（落ち着いた緑）をアクティブ色に */
+  background: var(--color-new-tab-active);
+  color: white;
+  font-weight: 700;
+}
+
+/* === ここまでコピー === */
+
+/* style.cssの末尾に追加したコード内に、以下を追記 */
+
+.app-header {
+  /* ヘッダー内のテキストやアイコンの色を、テーマに合わせた濃い色に変更 */
+  color: #3D405B;
+  text-shadow: none; /* 背景が明るくなったのでテキストシャドウは不要 */
+}
+
+/* ログアウトボタンもヘッダーの文字色に合わせる */
+#user-status .btn {
+  color: #3D405B;
+  border-color: rgba(61, 64, 91, 0.3); /* 枠線の色も調整 */
+  background-color: rgba(255, 255, 255, 0.2); /* 背景を少し調整 */
+}

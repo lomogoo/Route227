@@ -1,0 +1,20 @@
+{
+  "name": "Route227 Stamp",
+  "short_name": "227Stamp",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F2CC8F",
+  "theme_color": "#E76F51",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
