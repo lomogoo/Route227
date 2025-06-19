@@ -48,8 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const lastSection = sessionStorage.getItem('activeSection') || 'feed-section';
         await showSection(lastSection, true);
 
-        // ▼▼▼ [変更点1] 最初のセクション表示後にURLハッシュの処理を呼び出す ▼▼▼
+        // ▼▼▼ [変更点1] アプリ初期化完了後に、以下の2つの関数を呼び出す ▼▼▼
         handleUrlHash();
+        promptForPushNotifications();
 
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
@@ -164,7 +165,7 @@ async function showSection(sectionId, isInitialLoad = false) {
   if (sectionElement) {
     sectionElement.classList.add('active');
     if (sectionId === 'feed-section') await initializeFeedPage();
-    else if (sectionId === 'foodtruck-section') initializeFoodtruckPage(); // ここはawaitしない
+    else if (sectionId === 'foodtruck-section') initializeFoodtruckPage();
   }
   
   if (!isInitialLoad) {
@@ -460,42 +461,51 @@ function promiseWithTimeout(promise, ms, timeoutError = new Error('Promise timed
 }
 
 
-// ▼▼▼ [変更点2] この関数をapp.jsの末尾に追加 ▼▼▼
+// ▼▼▼ [変更点2] 以下の2つの関数をapp.jsの末尾に追加 ▼▼▼
+
 /**
  * URLのハッシュをチェックして、対応する記事のサマリーモーダルを開く関数
  */
-async function handleUrlHash() {
+function handleUrlHash() {
   const hash = window.location.hash;
 
-  // #article- から始まるハッシュがあるかチェック
   if (hash && hash.startsWith('#article-')) {
-    // #article- を取り除いてID部分だけを取得
     const articleId = parseInt(hash.substring(9), 10);
-
     if (isNaN(articleId)) return;
 
-    // 記事データ（articlesCache）がまだ読み込まれていない場合があるので、
-    // 少し待ってからモーダル表示を試みる（最大10秒）
     let attempts = 0;
     const maxAttempts = 20; // 500ms * 20 = 10秒
 
     const tryShowModal = () => {
-      // articlesCache内に該当記事があるか探す
       const article = articlesCache.find(a => a.id === articleId);
       
       if (article) {
-        // 記事が見つかったらモーダルを表示
         showSummaryModal(articleId);
       } else if (attempts < maxAttempts) {
-        // まだ見つからず、試行回数が上限に達していなければ500ms待って再試行
         attempts++;
         setTimeout(tryShowModal, 500);
       }
     };
 
     tryShowModal();
-
-    // ページが他の場所に遷移しないように、ハッシュをクリア
     history.pushState("", document.title, window.location.pathname + window.location.search);
   }
+}
+
+/**
+ * 初回訪問時に通知許可プロンプトを表示する関数
+ */
+function promptForPushNotifications() {
+  // 過去にプロンプトを表示したことがあるかチェック
+  if (localStorage.getItem('onesignal-prompt-shown')) {
+    return; // 表示したことがあれば何もしない
+  }
+
+  // OneSignalの準備ができてから、スライドダウン型のプロンプトを表示
+  OneSignal.push(() => {
+    OneSignal.Slidedown.prompt();
+  });
+
+  // プロンプトを表示した記録を残す
+  localStorage.setItem('onesignal-prompt-shown', 'true');
 }
