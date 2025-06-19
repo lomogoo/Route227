@@ -23,15 +23,14 @@ const appData = {
 document.addEventListener('DOMContentLoaded', () => {
   setupStaticEventListeners();
 
-   /* ▼▼▼ 以下のif文全体をコメントアウト、または削除してください ▼▼▼ */
-   /*
-   if ('serviceWorker' in navigator) {
+  // Service Workerの二重登録を防ぐため、この部分はコメントアウトのままにします
+  /*
+  if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
       .then((reg) => console.log('✅ Service Worker registered:', reg))
       .catch((err) => console.error('❌ Service Worker registration failed:', err));
   }
   */
-   /* ▲▲▲ ここまで ▲▲▲ */
 
   db.auth.onAuthStateChange(async (event, session) => {
     const previousUID = globalUID;
@@ -48,6 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const lastSection = sessionStorage.getItem('activeSection') || 'feed-section';
         await showSection(lastSection, true);
+
+        // ▼▼▼ [変更点1] 最初のセクション表示後にURLハッシュの処理を呼び出す ▼▼▼
+        handleUrlHash();
+
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
         await showSection('feed-section', true);
@@ -197,7 +200,6 @@ async function initializeFeedPage() {
   currentCategory = 'all';
   document.querySelectorAll('.category-tab').forEach(t => t.classList.toggle('active', t.dataset.category === 'all'));
   
-  // renderArticlesを直接awaitせず、分離して呼び出す
   renderArticles(currentCategory, true);
 }
 
@@ -348,7 +350,6 @@ function initQRScanner() {
   ).catch(() => document.getElementById('qr-reader').innerHTML = '<p style="color: red;">カメラの起動に失敗しました</p>');
 }
 
-// ★★★ フィード表示も抜本対策を適用 ★★★
 function renderArticles(category, clearContainer) {
   const articlesContainer = document.getElementById('articles-container');
   const loadMoreBtn = document.getElementById('load-more-btn');
@@ -363,7 +364,6 @@ function renderArticles(category, clearContainer) {
     loadMoreBtn.disabled = true;
   }
 
-  // データ取得をバックグラウンドで実行
   (async () => {
     try {
       const from = currentPage * ARTICLES_PER_PAGE;
@@ -378,7 +378,7 @@ function renderArticles(category, clearContainer) {
       if (error) throw error;
 
       if (clearContainer) {
-          articlesContainer.innerHTML = ''; // スピナーを消す
+          articlesContainer.innerHTML = '';
       }
       
       articlesCache.push(...newArticles);
@@ -459,8 +459,8 @@ function promiseWithTimeout(promise, ms, timeoutError = new Error('Promise timed
   return Promise.race([promise, timeout]);
 }
 
-// ▼▼▼ この関数をapp.jsの末尾に追加 ▼▼▼
 
+// ▼▼▼ [変更点2] この関数をapp.jsの末尾に追加 ▼▼▼
 /**
  * URLのハッシュをチェックして、対応する記事のサマリーモーダルを開く関数
  */
