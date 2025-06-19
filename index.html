@@ -18,10 +18,9 @@
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
-      /* ▼▼▼ serviceWorker の設定を以下のように変更 ▼▼▼ */
-      serviceWorkerPath: "service-worker.js",
-      scope: "./",
-      /* ▲▲▲ ここまで変更 ▲▲▲ */
+      // serviceWorkerPathとscopeをサイトの構造に合わせる
+      serviceWorkerPath: "/Route227/service-worker.js",
+      scope: "/Route227/",
       notifyButton: { enable: true }  
     });
   });
