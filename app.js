@@ -23,15 +23,6 @@ const appData = {
 document.addEventListener('DOMContentLoaded', () => {
   setupStaticEventListeners();
 
-  // Service Workerの二重登録を防ぐため、この部分はコメントアウトのままにします
-  /*
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then((reg) => console.log('✅ Service Worker registered:', reg))
-      .catch((err) => console.error('❌ Service Worker registration failed:', err));
-  }
-  */
-
   db.auth.onAuthStateChange(async (event, session) => {
     const previousUID = globalUID;
     globalUID = session?.user?.id || null;
@@ -47,11 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const lastSection = sessionStorage.getItem('activeSection') || 'feed-section';
         await showSection(lastSection, true);
-
-        // ▼▼▼ [変更点1] アプリ初期化完了後に、以下の2つの関数を呼び出す ▼▼▼
         handleUrlHash();
-        promptForPushNotifications();
-
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
         await showSection('feed-section', true);
@@ -75,6 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* 4) ナビゲーションと表示切替 */
 function setupStaticEventListeners() {
+  // Service Workerの二重登録防止コードは削除済み
+  
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
       const sectionId = e.currentTarget.dataset.section;
@@ -150,6 +139,9 @@ function setupStaticEventListeners() {
       closeModal(e.target);
     }
   });
+
+  // ▼▼▼ [変更点] 通知ボタンの初期化処理をここに移動 ▼▼▼
+  initializeNotificationButton();
 }
 
 async function showSection(sectionId, isInitialLoad = false) {
@@ -460,9 +452,6 @@ function promiseWithTimeout(promise, ms, timeoutError = new Error('Promise timed
   return Promise.race([promise, timeout]);
 }
 
-
-// ▼▼▼ [変更点2] 以下の2つの関数をapp.jsの末尾に追加 ▼▼▼
-
 /**
  * URLのハッシュをチェックして、対応する記事のサマリーモーダルを開く関数
  */
@@ -474,7 +463,7 @@ function handleUrlHash() {
     if (isNaN(articleId)) return;
 
     let attempts = 0;
-    const maxAttempts = 20; // 500ms * 20 = 10秒
+    const maxAttempts = 20;
 
     const tryShowModal = () => {
       const article = articlesCache.find(a => a.id === articleId);
@@ -493,19 +482,54 @@ function handleUrlHash() {
 }
 
 /**
- * 初回訪問時に通知許可プロンプトを表示する関数
+ * 【NEW】通知設定ボタンを初期化し、状態に応じてアイコンを更新する関数
  */
-function promptForPushNotifications() {
-  // 過去にプロンプトを表示したことがあるかチェック
-  if (localStorage.getItem('onesignal-prompt-shown')) {
-    return; // 表示したことがあれば何もしない
-  }
+function initializeNotificationButton() {
+  const container = document.getElementById('notification-button-container');
+  if (!container) return;
 
-  // OneSignalの準備ができてから、スライドダウン型のプロンプトを表示
-  OneSignal.push(() => {
-    OneSignal.Slidedown.prompt();
-  });
+  // アイコンのSVG定義
+  const icons = {
+    granted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    denied: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+    default: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>`
+  };
 
-  // プロンプトを表示した記録を残す
-  localStorage.setItem('onesignal-prompt-shown', 'true');
+  const updateButtonState = async () => {
+    // OneSignal SDKがロードされるまで待つ
+    await OneSignal.push(async () => {
+      const permission = await OneSignal.getNotificationPermission();
+      let iconHtml = '';
+      let clickHandler = () => {};
+
+      switch (permission) {
+        case 'granted':
+          iconHtml = icons.granted;
+          clickHandler = () => showNotification('設定確認', 'プッシュ通知は既にオンになっています。');
+          break;
+        case 'denied':
+          iconHtml = icons.denied;
+          clickHandler = () => showNotification('設定の変更方法', '通知がブロックされています。ブラウザの設定から変更してください。');
+          break;
+        default: // 'default'
+          iconHtml = icons.default;
+          clickHandler = async () => {
+            await OneSignal.Slidedown.prompt();
+            updateButtonState(); // ユーザーの選択後にアイコンを更新
+          };
+          break;
+      }
+      container.innerHTML = `<button>${iconHtml}</button>`;
+      container.querySelector('button')?.addEventListener('click', clickHandler);
+    });
+  };
+
+  updateButtonState();
 }
+
+// ▼▼▼ [削除] 自動プロンプト表示機能は不要になったため、この関数は削除します ▼▼▼
+/*
+function promptForPushNotifications() {
+  // ... (この関数全体を削除) ...
+}
+*/
