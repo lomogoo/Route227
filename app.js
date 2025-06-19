@@ -458,3 +458,44 @@ function promiseWithTimeout(promise, ms, timeoutError = new Error('Promise timed
   });
   return Promise.race([promise, timeout]);
 }
+
+// ▼▼▼ この関数をapp.jsの末尾に追加 ▼▼▼
+
+/**
+ * URLのハッシュをチェックして、対応する記事のサマリーモーダルを開く関数
+ */
+async function handleUrlHash() {
+  const hash = window.location.hash;
+
+  // #article- から始まるハッシュがあるかチェック
+  if (hash && hash.startsWith('#article-')) {
+    // #article- を取り除いてID部分だけを取得
+    const articleId = parseInt(hash.substring(9), 10);
+
+    if (isNaN(articleId)) return;
+
+    // 記事データ（articlesCache）がまだ読み込まれていない場合があるので、
+    // 少し待ってからモーダル表示を試みる（最大10秒）
+    let attempts = 0;
+    const maxAttempts = 20; // 500ms * 20 = 10秒
+
+    const tryShowModal = () => {
+      // articlesCache内に該当記事があるか探す
+      const article = articlesCache.find(a => a.id === articleId);
+      
+      if (article) {
+        // 記事が見つかったらモーダルを表示
+        showSummaryModal(articleId);
+      } else if (attempts < maxAttempts) {
+        // まだ見つからず、試行回数が上限に達していなければ500ms待って再試行
+        attempts++;
+        setTimeout(tryShowModal, 500);
+      }
+    };
+
+    tryShowModal();
+
+    // ページが他の場所に遷移しないように、ハッシュをクリア
+    history.pushState("", document.title, window.location.pathname + window.location.search);
+  }
+}
