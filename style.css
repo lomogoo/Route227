@@ -83,7 +83,7 @@ body {
   align-items: center;
 }
 .logo { display: flex; align-items: center; gap: 8px; }
-.logo-icon { font-size: 24px; }
+.logo-icon { height: 28px; width: auto; vertical-align: middle; }
 .logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
 #user-status .btn {
   background-color: transparent;
@@ -182,7 +182,8 @@ body {
 .btn:disabled { background-color: #e9ecef; color: #adb5bd; cursor: not-allowed; }
 .btn-full { width: 100%; }
 
-input[type="email"] {
+input[type="email"],
+input[type="text"] {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--color-border);
@@ -287,6 +288,14 @@ input[type="email"] {
 .reward-info p { font-size: 12px; color: #6c757d; margin: 0; }
 .reward-item .btn { padding: 8px 16px; font-size: 12px; }
 .reward-item.available { background-color: #fffbeb; }
+
+.schedule-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: var(--radius-md);
+}
 
 /* 9. Modals */
 .modal {
@@ -443,94 +452,25 @@ input[type="email"] {
   text-align: center;
 }
 
-
-/* style.css の末尾にこのコードを追加 */
-
-/* 12. Schedule Image */
-.schedule-image {
-  display: block; /* 画像下の余分な余白を消す */
-  max-width: 100%; /* 親要素の幅以上に大きくならないようにする */
-  height: auto;   /* 画像の縦横比を維持する */
-  margin: 0 auto; /* 中央揃えにする */
-  border-radius: var(--radius-md); /* 画像の角を少し丸める */
+/* 13. Header Notification Button Styles */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
-/* style.css のロゴ画像のスタイルを以下に置き換え */
-
-/* ロゴ画像のサイズ調整（より強力な指定） */
-.app-header .logo .logo-icon {
-  height: 28px; /* 画像の高さを28pxに指定 */
-  width: auto;  /* 横幅は縦横比を維持して自動調整 */
-  vertical-align: middle; /* 隣のテキストとの縦位置を微調整 */
-}
-
-/* === ここからコピー === */
-
-/**
- * デザイン改修で気に入った部分を適用するカスタムスタイル
- * 元のstyle.cssの一番下に追加してください
- */
-
-/* 1. 全体の背景色とヘッダーの背景色を更新 */
-
-/* :rootから新しい色定義を拝借（しなくても動きますが、後で調整しやすいように） */
-:root {
-  --color-new-bg: #F2CC8F;
-  --color-new-gradient-start: #F4F1DE;
-  --color-new-gradient-end: #E07A5F;
-  --color-new-tab-active: #81B29A;
-}
-
-body {
-  /* 新しい暖かい背景色 */
-  background-color: var(--color-new-bg);
-  /* 淡いグラデーションとテクスチャを追加して深みを出す */
-  background-image: linear-gradient(170deg, var(--color-new-gradient-start) 0%, var(--color-new-gradient-end) 200%), url('https://www.transparenttextures.com/patterns/subtle-zebra-3d.png');
-}
-
-#app-root {
-  /* 全体の背景が見えるように、メインコンテンツの背景を透明に */
-  background-color: transparent;
-  box-shadow: none; /* 背景が一体化するので影は不要に */
-}
-
-.app-header {
-  /* ヘッダーも透明にして、背景との一体感を出す */
-  background: transparent;
-  /* ヘッダー内のテキストやアイコンが見やすいように、少しだけ影をつける */
-  text-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-/* 2. 上部タブの色使いを更新 */
-.category-tab {
-  /* 半透明の背景で軽やかな印象に */
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(2px); /* すりガラス効果（お好みで） */
-  color: var(--color-text);
-  font-weight: 600;
-  border: 1px solid rgba(255,255,255,0.5); /* 輪郭を少しだけはっきりと */
-}
-
-.category-tab.active {
-  /* 新しいテーマのセカンダリカラー（落ち着いた緑）をアクティブ色に */
-  background: var(--color-new-tab-active);
+#notification-button-container button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
-  font-weight: 700;
 }
 
-/* === ここまでコピー === */
-
-/* style.cssの末尾に追加したコード内に、以下を追記 */
-
-.app-header {
-  /* ヘッダー内のテキストやアイコンの色を、テーマに合わせた濃い色に変更 */
-  color: #3D405B;
-  text-shadow: none; /* 背景が明るくなったのでテキストシャドウは不要 */
-}
-
-/* ログアウトボタンもヘッダーの文字色に合わせる */
-#user-status .btn {
-  color: #3D405B;
-  border-color: rgba(61, 64, 91, 0.3); /* 枠線の色も調整 */
-  background-color: rgba(255, 255, 255, 0.2); /* 背景を少し調整 */
+#notification-button-container svg {
+  width: 24px;
+  height: 24px;
 }
