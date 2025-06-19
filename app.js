@@ -62,8 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* 4) ナビゲーションと表示切替 */
 function setupStaticEventListeners() {
-  // Service Workerの二重登録防止コードは削除済み
-  
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
       const sectionId = e.currentTarget.dataset.section;
@@ -140,7 +138,6 @@ function setupStaticEventListeners() {
     }
   });
 
-  // ▼▼▼ [変更点] 通知ボタンの初期化処理をここに移動 ▼▼▼
   initializeNotificationButton();
 }
 
@@ -482,13 +479,12 @@ function handleUrlHash() {
 }
 
 /**
- * 【NEW】通知設定ボタンを初期化し、状態に応じてアイコンを更新する関数
+ * 通知設定ボタンを初期化し、状態に応じてアイコンを更新する関数
  */
 function initializeNotificationButton() {
   const container = document.getElementById('notification-button-container');
   if (!container) return;
 
-  // アイコンのSVG定義
   const icons = {
     granted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
     denied: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
@@ -496,8 +492,8 @@ function initializeNotificationButton() {
   };
 
   const updateButtonState = async () => {
-    // OneSignal SDKがロードされるまで待つ
-    await OneSignal.push(async () => {
+    // ▼▼▼ [変更点] awaitを削除 ▼▼▼
+    OneSignal.push(async () => {
       const permission = await OneSignal.getNotificationPermission();
       let iconHtml = '';
       let clickHandler = () => {};
@@ -515,7 +511,7 @@ function initializeNotificationButton() {
           iconHtml = icons.default;
           clickHandler = async () => {
             await OneSignal.Slidedown.prompt();
-            updateButtonState(); // ユーザーの選択後にアイコンを更新
+            updateButtonState();
           };
           break;
       }
@@ -523,13 +519,6 @@ function initializeNotificationButton() {
       container.querySelector('button')?.addEventListener('click', clickHandler);
     });
   };
-
+  
   updateButtonState();
 }
-
-// ▼▼▼ [削除] 自動プロンプト表示機能は不要になったため、この関数は削除します ▼▼▼
-/*
-function promptForPushNotifications() {
-  // ... (この関数全体を削除) ...
-}
-*/
