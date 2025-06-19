@@ -73,7 +73,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 .app-header {
-  background: var(--color-brand);
+  background: var(--color-primary); /* var(--color-brand) から変更 */
   color: white;
   padding: 16px;
 }
