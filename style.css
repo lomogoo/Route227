@@ -1,481 +1,171 @@
-/* 1. Reset & Base Styles */
-:root {
-  --font-body: 'Noto Sans JP', sans-serif;
-  --font-display: 'Poppins', sans-serif;
-  
-  --color-text: #264653;
-  --color-bg: #F4F1DE;
-  --color-primary: #E76F51;
-  --color-primary-dark: #D76041;
-  --color-secondary: #F4A261;
-  --color-accent: #E9C46A;
-  --color-brand: #2A9D8F;
-  --color-surface: #FFFFFF;
-  --color-border: #E0E0E0;
+/* style.css */
 
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
-  --radius-md: 12px;
-  --radius-lg: 20px;
-}
-
-*, *::before, *::after {
-  box-sizing: border-box;
+/* リセット & ベース */
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
-
 body {
-  font-family: var(--font-body);
-  background-color: var(--color-bg);
-  color: var(--color-text);
-  -webkit-font-smoothing: antialiased;
-  padding-bottom: 80px; /* Footer height */
+  font-family: 'Noto Sans JP', sans-serif;
+  background-color: #fff;
+  color: #333;
+  line-height: 1.6;
 }
 
-/* 2. App Loader */
-.app-loader {
+/* ヘッダー */
+.app-header {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  background-color: var(--color-bg);
-  z-index: 10000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 1;
-  transition: opacity 0.5s ease;
-  pointer-events: auto;
-}
-.app-loader:not(.active) {
-  opacity: 0;
-  pointer-events: none;
-}
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid var(--color-accent);
-  border-top: 5px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-
-/* 3. Layout & Header */
-#app-root {
-  max-width: 640px;
-  margin: 0 auto;
-  background-color: var(--color-surface);
-  min-height: 100vh;
-  box-shadow: var(--shadow-md);
-}
-.app-header {
-  background: var(--color-primary); /* var(--color-brand) から変更 */
-  color: white;
-  padding: 16px;
+  background-color: #fff;    /* 背景をメインと同じ白に */
+  border-bottom: none;
+  box-shadow: none;
+  z-index: 1000;
 }
 .header-container {
+  max-width: 960px;
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.logo { display: flex; align-items: center; gap: 8px; }
-.logo-icon { height: 28px; width: auto; vertical-align: middle; }
-.logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
-#user-status .btn {
-  background-color: transparent;
-  border: 1px solid rgba(255,255,255,0.5);
-  color: white;
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 1rem;
 }
 
-/* 4. Footer Navigation */
-.footer-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  max-width: 640px;
-  margin: 0 auto;
-  height: 65px;
-  background-color: var(--color-surface);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-around;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-}
-.nav-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  flex-grow: 1;
-  text-decoration: none;
-  color: #6c757d;
-  font-size: 10px;
-  gap: 2px;
-  transition: all 0.2s ease;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-.nav-link.active {
-  color: var(--color-primary);
-  transform: translateY(-2px);
-}
-.nav-link svg {
-  transition: all 0.2s ease;
-}
-.nav-link.active svg {
-  stroke: var(--color-primary);
-}
-
-
-/* 5. Sections & Content */
-.section { display: none; padding: 20px 16px; }
-.section.active { display: block; animation: fadeIn 0.5s ease; }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.card {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  margin-bottom: 24px;
-  overflow: hidden;
-}
-.card-header {
-  padding: 20px;
-  border-bottom: 1px solid var(--color-border);
-}
-.card-header h2 { font-family: var(--font-display); font-size: 22px; margin-bottom: 4px; }
-.card-header p { font-size: 14px; color: #6c757d; margin: 0;}
-.card-body { padding: 20px; }
-.card-footer { padding: 20px; background-color: #f8f9fa; border-top: 1px solid var(--color-border); }
-
-
-/* 6. Buttons & Forms */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font-family: var(--font-display);
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  padding: 12px 24px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-.btn-primary { background-color: var(--color-primary); color: white; }
-.btn-primary:hover { background-color: var(--color-primary-dark); }
-.btn-secondary { background-color: var(--color-border); color: var(--color-text); }
-.btn-secondary:hover { background-color: #d3d3d3; }
-.btn:disabled { background-color: #e9ecef; color: #adb5bd; cursor: not-allowed; }
-.btn-full { width: 100%; }
-
-input[type="email"],
-input[type="text"] {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 16px;
-  margin-bottom: 16px;
-}
-
-/* 7. Feed Page */
-.category-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-}
-.category-tab {
-  white-space: nowrap;
-  padding: 8px 16px;
-  border-radius: 99px;
-  background: var(--color-bg);
-  border: none;
-  color: var(--color-text);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.category-tab.active { background: var(--color-accent); color: var(--color-text); font-weight: 700; }
-.article-link {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    cursor: pointer;
-}
-.articles-container .card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.articles-container .card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-.articles-container .card-body { padding: 16px; }
-.articles-container .article-title { font-family: var(--font-display); font-size: 18px; margin-bottom: 8px; }
-.articles-container .article-excerpt { font-size: 14px; color: #6c757d; }
-.articles-container img { width: 100%; height: 180px; object-fit: cover; }
-
-
-/* 8. Stamp Card Page */
-.stamp-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-.stamp {
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background-color: var(--color-bg);
-  border: 2px dashed var(--color-border);
+/* ロゴ */
+.logo {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
 }
-.stamp .stamp-number { font-family: var(--font-display); font-size: 24px; color: var(--color-border); }
-.stamp.active {
-  border-style: solid;
-  border-color: var(--color-brand);
-  background-color: var(--color-accent);
-  transform: scale(1.05);
-  animation: stamp-pop 0.4s ease-out;
-}
-.stamp.active .stamp-number { display: none; }
-.stamp.active[data-stamp-id="1"], .stamp.active[data-stamp-id="2"], .stamp.active[data-stamp-id="4"], .stamp.active[data-stamp-id="5"] {
-  background-image: url('assets/logo.png');
-  background-size: 60%;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-.stamp.active[data-stamp-id="3"], .stamp.active[data-stamp-id="6"] {
-  background-image: url('assets/truck.png');
-  background-size: 60%;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-@keyframes stamp-pop {
-  0% { transform: scale(0.5); opacity: 0; }
-  80% { transform: scale(1.1); }
-  100% { transform: scale(1.05); opacity: 1; }
-}
-
-.rewards-card-container .card-body { padding: 12px; }
-.reward-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  transition: background-color 0.2s ease;
-}
-.reward-item:not(:last-child) { border-bottom: 1px solid var(--color-border); }
-.reward-icon { font-size: 28px; }
-.reward-info { flex-grow: 1; }
-.reward-info h3 { font-size: 16px; font-weight: 700; }
-.reward-info p { font-size: 12px; color: #6c757d; margin: 0; }
-.reward-item .btn { padding: 8px 16px; font-size: 12px; }
-.reward-item.available { background-color: #fffbeb; }
-
-.schedule-image {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  margin: 0 auto;
-  border-radius: var(--radius-md);
-}
-
-/* 9. Modals */
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,0.5);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-.modal.active { opacity: 1; pointer-events: auto; }
-.modal-content {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  width: 90%;
-  max-width: 400px;
-  box-shadow: var(--shadow-lg);
-  transform: scale(0.95);
-  transition: transform 0.3s ease;
-}
-.modal.active .modal-content { transform: scale(1); }
-.modal-header {
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--color-border);
-}
-.modal-header h3 { font-size: 18px; }
-.close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #6c757d; }
-.modal-body { padding: 20px; }
-.modal-body p { font-size: 14px; margin-bottom: 16px; }
-#qr-reader { border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
-
-/* 10. Summary Modal */
-.summary-modal-content {
-  padding: 0;
-  overflow: hidden;
-}
-.summary-close-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background-color: rgba(0,0,0,0.5);
-  color: white;
-  border-radius: 50%;
+.logo-icon {
   width: 32px;
   height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28px;
-  line-height: 1;
-  z-index: 10;
-  border: none;
+  margin-right: 0.5rem;
 }
-.summary-image {
-  width: 100%;
-  height: 180px;
-  background-size: cover;
-  background-position: center;
-  background-color: var(--color-border);
-}
-.summary-text-content {
-  padding: 24px;
-}
-#summary-title {
-  font-family: var(--font-display);
-  font-size: 22px;
-  margin-bottom: 20px;
-  line-height: 1.4;
-}
-#summary-bullets {
-  list-style-type: none;
-  padding: 0;
-  margin: 0 0 24px 0;
-}
-#summary-bullets li {
-  font-size: 15px;
-  line-height: 1.7;
-  padding-left: 20px;
-  position: relative;
-}
-#summary-bullets li:not(:last-child) {
-  margin-bottom: 12px;
-}
-#summary-bullets li::before {
-  content: '✓';
-  position: absolute;
-  left: 0;
-  color: var(--color-primary);
-  font-weight: bold;
-}
-#summary-read-more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+.logo-text {
+  font-size: 1.25rem;
+  font-weight: 700;
 }
 
-/* 11. Load More Button */
-.load-more-container {
-  padding: 20px 0;
-  text-align: center;
-}
-#load-more-btn {
-  display: none; 
-}
-#load-more-btn.visible {
-  display: inline-flex;
-}
-
-/* 12. Two-Step Auth Styles */
-.form-message {
-  margin-top: 12px;
-  text-align: center;
-  font-size: 12px;
-  height: 1.2em;
-  color: var(--color-primary);
-}
-.hidden {
-  display: none !important;
-}
-#otp-email-display {
-  word-break: break-all;
-}
-#otp-code {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 20px;
-  text-align: center;
-  letter-spacing: 0.5em;
-  margin-bottom: 16px;
-}
-.btn-link {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  color: #6c757d;
-  text-decoration: underline;
-  font-size: 12px;
-  cursor: pointer;
-  margin-top: 16px;
-  text-align: center;
-}
-
-/* 13. Header Notification Button Styles */
+/* ヘッダーアクション */
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0.5rem;
 }
 
-#notification-button-container button {
+/* OneSignal カスタムリンクボタンをアイコンのみ表示 */
+.onesignal-customlink-container button {
   background: none;
   border: none;
+  font-size: 1.5rem;    /* 🔔アイコンサイズ */
   cursor: pointer;
-  padding: 4px;
+  padding: 0.5rem;
+}
+/* ボタン内テキストを非表示に */
+.onesignal-customlink-container button .onesignal-customlink-text {
+  display: none;
+}
+
+/* メインコンテンツ */
+.app-content {
+  padding-top: 4.5rem;    /* ヘッダーの高さ分をオフセット */
+}
+
+/* カテゴリータブ */
+.category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 2rem 0 1rem;
+  justify-content: center;
+}
+.category-tab {
+  background-color: #f0f0f0;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+.category-tab.active {
+  background-color: #dcdcdc;
+}
+
+/* 記事コンテナ */
+.articles-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  padding: 0 1rem;
+}
+
+/* ボタン共通 */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 1rem;
+  text-align: center;
+}
+.btn-primary {
+  background-color: #e12d30;
+  color: #fff;
+}
+.btn-secondary {
+  background-color: #eee;
+  color: #333;
+}
+
+/* スタンプカード */
+.stamp-card-container {
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin: 0 auto 2rem;
+  max-width: 400px;
+}
+.stamp-card-container .card-header {
+  background-color: #f9f9f9;
+  padding: 1rem;
+}
+.stamp-card-container .card-header h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+.stamp-card-container .card-header p {
+  font-size: 1rem;
+  color: #666;
+}
+.stamp-card-container .card-body {
+  padding: 1rem;
+}
+.stamp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+.stamp {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2px dashed #ccc;
+  border-radius: 0.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+}
+.stamp-number {
+  font-weight: 700;
 }
 
-#notification-button-container svg {
-  width: 24px;
-  height: 24px;
+/* その他のレイアウト調整 */
+section {
+  padding: 1rem 0;
 }
-
-/* ▼▼▼ [変更点] 拒否状態のアイコンの色を赤くするスタイルを追加 ▼▼▼ */
-#notification-button-container.denied button {
-  color: #ff5252; /* より目立つ赤色に変更 */
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
