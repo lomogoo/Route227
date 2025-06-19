@@ -474,3 +474,8 @@ input[type="text"] {
   width: 24px;
   height: 24px;
 }
+
+/* ▼▼▼ [変更点] 拒否状態のアイコンの色を赤くするスタイルを追加 ▼▼▼ */
+#notification-button-container.denied button {
+  color: #ff5252; /* より目立つ赤色に変更 */
+}
