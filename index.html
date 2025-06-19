@@ -17,7 +17,26 @@
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
-      appId: "8e1dc10e-1525-4db3-9036-dd99f1552711"
+      appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
+      
+      // ▼▼▼ 以下を丸ごと追加 ▼▼▼
+
+      // ベル型ボタンを無効化
+      notifyButton: {
+        enable: false
+      },
+      // スライドダウン型プロンプトのオプションを設定
+      promptOptions: {
+        slidedown: {
+          enabled: true,
+          actionMessage: "新しい記事やお得な情報をプッシュ通知でお知らせします！",
+          acceptButtonText: "はい、通知を受け取る",
+          cancelButtonText: "いいえ、結構です",
+          // さらに詳細なデザインカスタマイズも可能（色など）
+        }
+      }
+
+      // ▲▲▲ ここまで ▲▲▲
     });
   });
 </script>
