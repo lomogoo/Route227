@@ -9,18 +9,17 @@
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#F2CC8F" />
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
+  <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
       
-      // ▼▼▼ 以下を丸ごと追加 ▼▼▼
-
       // ベル型ボタンを無効化
       notifyButton: {
         enable: false
@@ -29,17 +28,14 @@
       promptOptions: {
         slidedown: {
           enabled: true,
-          actionMessage: "あなたの暮らしを豊かにする情報をプッシュ通知でお知らせします！",
-          acceptButtonText: "通知を受け取る",
+          actionMessage: "新しい記事やお得な情報をプッシュ通知でお知らせします！",
+          acceptButtonText: "はい、通知を受け取る",
           cancelButtonText: "いいえ、結構です",
-          // さらに詳細なデザインカスタマイズも可能（色など）
         }
       }
-
-      // ▲▲▲ ここまで ▲▲▲
     });
   });
-</script>
+  </script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -62,87 +58,103 @@
           <img src="assets/truck.png" alt="Route 227 トラックロゴ" class="logo-icon">
           <span class="logo-text">Route 227</span>
         </div>
-        <div id="user-status"></div>
+        
+        <div class="header-actions">
+          <div id="notification-button-container"></div>
+          <div id="user-status"></div>
+        </div>
+
       </div>
     </header>
 
     <main class="app-content">
       <section id="feed-section" class="section">
-    <div class="container">
-      <div class="category-tabs" id="category-tabs">
-        <button class="category-tab active" data-category="all">すべて</button>
-        <button class="category-tab" data-category="イベント">イベント</button>
-        <button class="category-tab" data-category="特集">特集</button>
-        <button class="category-tab" data-category="お店">お店</button>
-        <button class="category-tab" data-category="ニュース・コラム">ニュース・コラム</button>
-      </div>
-      <div class="articles-container" id="articles-container"></div>
-      <div id="load-more-container" class="load-more-container">
-        <button id="load-more-btn" class="btn btn-secondary">さらに読み込む</button>
-      </div>
-    </div>
-  </section>
+        <div class="container">
+          <div class="category-tabs" id="category-tabs">
+            <button class="category-tab active" data-category="all">すべて</button>
+            <button class="category-tab" data-category="イベント">イベント</button>
+            <button class="category-tab" data-category="特集">特集</button>
+            <button class="category-tab" data-category="お店">お店</button>
+            <button class="category-tab" data-category="ニュース・コラム">ニュース・コラム</button>
+          </div>
+          <div class="articles-container" id="articles-container"></div>
+          <div id="load-more-container" class="load-more-container">
+            <button id="load-more-btn" class="btn btn-secondary">さらに読み込む</button>
+          </div>
+        </div>
+      </section>
 
        <section id="foodtruck-section" class="section">
-    <div class="container">
-      <div class="card stamp-card-container">
-        <div class="card-header">
-          <h2>スタンプカード</h2>
-          <p>旅の思い出を集めよう</p>
-        </div>
-        <div class="card-body">
-          <div class="stamp-grid">
-            <div class="stamp" data-stamp-id="1"><span class="stamp-number">1</span></div>
-            <div class="stamp" data-stamp-id="2"><span class="stamp-number">2</span></div>
-            <div class="stamp" data-stamp-id="3"><span class="stamp-number">3</span></div>
-            <div class="stamp" data-stamp-id="4"><span class="stamp-number">4</span></div>
-            <div class="stamp" data-stamp-id="5"><span class="stamp-number">5</span></div>
-            <div class="stamp" data-stamp-id="6"><span class="stamp-number">6</span></div>
-          </div>
-        </div>
-        <div class="card-footer">
-          <button class="btn btn-primary btn-full" id="scan-qr">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/></svg>
-            <span>QRコードをスキャン</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="card rewards-card-container">
-        <div class="card-header">
-          <h2>特典と交換</h2>
-        </div>
-        <div class="card-body">
-          <div class="reward-item" id="coffee-reward-item">
-            <div class="reward-icon">☕️</div>
-            <div class="reward-info">
-              <h3>コーヒー1杯</h3>
-              <p>3スタンプで交換</p>
+        <div class="container">
+          <div class="card stamp-card-container">
+            <div class="card-header">
+              <h2>スタンプカード</h2>
+              <p>旅の思い出を集めよう</p>
             </div>
-            <button class="btn btn-secondary" id="coffee-reward" disabled>交換</button>
-          </div>
-          <div class="reward-item" id="curry-reward-item">
-            <div class="reward-icon">🍛</div>
-            <div class="reward-info">
-              <h3>カレー1杯</h3>
-              <p>6スタンプで交換</p>
+            <div class="card-body">
+              <div class="stamp-grid">
+                <div class="stamp" data-stamp-id="1"><span class="stamp-number">1</span></div>
+                <div class="stamp" data-stamp-id="2"><span class="stamp-number">2</span></div>
+                <div class="stamp" data-stamp-id="3"><span class="stamp-number">3</span></div>
+                <div class="stamp" data-stamp-id="4"><span class="stamp-number">4</span></div>
+                <div class="stamp" data-stamp-id="5"><span class="stamp-number">5</span></div>
+                <div class="stamp" data-stamp-id="6"><span class="stamp-number">6</span></div>
+              </div>
             </div>
-            <button class="btn btn-secondary" id="curry-reward" disabled>交換</button>
+            <div class="card-footer">
+              <button class="btn btn-primary btn-full" id="scan-qr">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/></svg>
+                <span>QRコードをスキャン</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="card schedule-card-container">
-        <div class="card-header">
-          <h2>出店スケジュール</h2>
-        </div>
-        <div class="card-body">
-          <img src="assets/schedule.png" alt="出店スケジュール" class="schedule-image">
-        </div>
-      </div>
+          <div class="card rewards-card-container">
+            <div class="card-header">
+              <h2>特典と交換</h2>
+            </div>
+            <div class="card-body">
+              <div class="reward-item" id="coffee-reward-item">
+                <div class="reward-icon">☕️</div>
+                <div class="reward-info">
+                  <h3>コーヒー1杯</h3>
+                  <p>3スタンプで交換</p>
+                </div>
+                <button class="btn btn-secondary" id="coffee-reward" disabled>交換</button>
+              </div>
+              <div class="reward-item" id="curry-reward-item">
+                <div class="reward-icon">🍛</div>
+                <div class="reward-info">
+                  <h3>カレー1杯</h3>
+                  <p>6スタンプで交換</p>
+                </div>
+                <button class="btn btn-secondary" id="curry-reward" disabled>交換</button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="card settings-card-container">
+            <div class="card-header">
+              <h2>通知設定</h2>
+            </div>
+            <div class="card-body">
+              <button class="btn btn-secondary btn-full" id="manage-notifications-btn">
+                通知の受け取り設定を変更
+              </button>
+            </div>
+          </div>
 
-    </div>
-  </section>
+          <div class="card schedule-card-container">
+            <div class="card-header">
+              <h2>出店スケジュール</h2>
+            </div>
+            <div class="card-body">
+              <img src="assets/schedule.png" alt="出店スケジュール" class="schedule-image">
+            </div>
+          </div>
+
+        </div>
+      </section>
     </main>
 
     <footer class="footer-nav">
