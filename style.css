@@ -72,9 +72,20 @@ body {
   min-height: 100vh;
   box-shadow: var(--shadow-md);
 }
+
+/* ▼▼▼【変更箇所】すりガラススタイルを適用 ▼▼▼ */
 .app-header {
-  background: var(--color-primary); /* var(--color-brand) から変更 */
-  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  /* 背景を半透明のボディ色にし、すりガラス効果を適用 */
+  background: rgba(244, 241, 222, 0.85); /* --color-bg (F4F1DE) のRGB値 + 透明度 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px); /* Safari向け */
+  
+  /* 文字やアイコンの基本色をダークカラーに */
+  color: var(--color-text);
   padding: 16px;
 }
 .header-container {
@@ -85,10 +96,12 @@ body {
 .logo { display: flex; align-items: center; gap: 8px; }
 .logo-icon { height: 28px; width: auto; vertical-align: middle; }
 .logo-text { font-family: var(--font-display); font-size: 20px; font-weight: 700; }
+
+/* ▼▼▼【変更箇所】ヘッダー色に合わせてボタンのスタイルを調整 ▼▼▼ */
 #user-status .btn {
   background-color: transparent;
-  border: 1px solid rgba(255,255,255,0.5);
-  color: white;
+  border: 1px solid rgba(38, 70, 83, 0.2); /* --color-text のRGB値 + 透明度 */
+  color: var(--color-text);
   padding: 6px 12px;
   font-size: 12px;
 }
@@ -459,6 +472,7 @@ input[type="text"] {
   gap: 16px;
 }
 
+/* ▼▼▼【変更箇所】ヘッダー色に合わせてアイコンの色を調整 ▼▼▼ */
 #notification-button-container button {
   background: none;
   border: none;
@@ -467,7 +481,7 @@ input[type="text"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--color-text);
 }
 
 #notification-button-container svg {
