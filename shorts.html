@@ -14,64 +14,74 @@
       background-color: var(--color-bg, #F4F1DE);
     }
 
-    /* ▼▼▼ shortsのレイアウトを全画面からカード形式に変更 ▼▼▼ */
+    /* ▼▼▼ shortsのレイアウトを「カードをめくるような」スタイルに変更 ▼▼▼ */
 
-    /* コンテナに余白を追加 */
+    /* メインコンテナを画面いっぱいにし、スクロールとスナップを有効に */
     main.shorts-container {
-      padding: 16px;
+      /* ヘッダー(60px)とフッター(65px)の高さを除いた分をコンテナの高さにする */
+      height: calc(100vh - 60px - 65px);
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+
+      /* カードの周りに余白を作る */
+      padding: 16px 8px;
+      box-sizing: border-box; /* paddingを含めて高さを計算する */
     }
 
-    /* カードのスタイルを再定義 */
+    /* カードのスタイル */
     .card.shorts-card {
-      /* 全画面表示をやめ、通常のカードスタイルに */
-      height: auto;
-      scroll-snap-align: none;
+      /* コンテナの高さ一杯にカードを表示 */
+      height: 100%;
+      /* スクロールのスナップ位置をカードの開始位置に設定 */
+      scroll-snap-align: start;
+      /* カードが縮まないようにする */
+      flex-shrink: 0;
 
-      /* index.htmlのカードとデザインを統一 */
+      /* デザインはカードスタイルを維持 */
       background-color: var(--color-surface, #FFFFFF);
       border-radius: var(--radius-lg, 20px);
       box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1));
-      margin-bottom: 24px;
-      overflow: hidden; /* 画像の角丸を適用するため */
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+
+      /* 不要なマージンをリセット */
+      margin-bottom: 0;
     }
 
     /* 画像のスタイル */
     .shorts-card__image {
-      /* 絶対配置をやめて、カード上部に普通に表示 */
-      position: static;
-      height: 200px; /* 画像の高さを固定 */
+      /* カードの高さの約40%を画像の高さにする */
+      height: 40%;
       width: 100%;
       object-fit: cover;
+      position: static;
     }
 
     /* コンテンツエリアのスタイル */
     .shorts-card__content {
-      /* 背景グラデーションと白文字をやめる */
-      position: static;
       color: var(--color-text, #264653);
       background: none;
-      padding: 16px; /* 余白を少し調整 */
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1; /* 残りの高さをすべて埋める */
     }
-
-    /* タイトルのスタイル */
+    
     .shorts-card__title {
       font-family: var(--font-display, 'Poppins', sans-serif);
       font-size: 18px;
       margin-bottom: 8px;
     }
 
-    /* 説明文のスタイル */
     .shorts-card__summary {
       font-size: 14px;
       color: #6c757d;
       margin-bottom: 16px;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      overflow-y: auto; /* 内容が多い場合にスクロール可能にする */
+      flex-grow: 1; /* タイトルとボタン以外のスペースを埋める */
     }
 
-    /* リンクボタンのスタイルをアプリのプライマリボタンと統一 */
     .shorts-card__link {
       display: inline-block;
       text-decoration: none;
@@ -82,6 +92,7 @@
       background-color: var(--color-primary, #E76F51);
       color: white;
       transition: background-color 0.2s ease;
+      text-align: center;
     }
     .shorts-card__link:hover {
       background-color: var(--color-primary-dark, #D76041);
