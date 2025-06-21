@@ -8,50 +8,43 @@
 
   <link rel="stylesheet" href="style.css"/>
 
- <style>
+<style>
     /* body全体の背景色をアプリ本体と合わせる */
     body {
       background-color: var(--color-bg, #F4F1DE);
     }
 
-    /* ▼▼▼ shortsのレイアウトを「カードをめくるような」スタイルに変更 ▼▼▼ */
-
-    /* メインコンテナを画面いっぱいにし、スクロールとスナップを有効に */
     main.shorts-container {
       /* ヘッダー(60px)とフッター(65px)の高さを除いた分をコンテナの高さにする */
       height: calc(100vh - 60px - 65px);
       overflow-y: scroll;
       scroll-snap-type: y mandatory;
 
-      /* カードの周りに余白を作る */
-      padding: 16px 8px;
-      box-sizing: border-box; /* paddingを含めて高さを計算する */
+      /* ★★★ 変更点 ★★★ */
+      /* コンテナ自体のパディングは不要なので削除 */
+      padding: 0;
     }
 
-    /* カードのスタイル */
     .card.shorts-card {
-      /* コンテナの高さ一杯にカードを表示 */
-      height: 100%;
-      /* スクロールのスナップ位置をカードの開始位置に設定 */
+      /* ★★★ 変更点 ★★★ */
+      /* 高さをコンテナ一杯より少し小さくし、上下左右に余白を作る */
+      height: calc(100% - 16px); /* 上下8pxずつの余白を確保 */
+      width: calc(100% - 16px);  /* 左右8pxずつの余白を確保 */
+      margin: 8px; /* 中央に配置しつつ余白として機能 */
+      
+      /* スクロールとデザインに関する設定は維持 */
       scroll-snap-align: start;
-      /* カードが縮まないようにする */
       flex-shrink: 0;
-
-      /* デザインはカードスタイルを維持 */
       background-color: var(--color-surface, #FFFFFF);
       border-radius: var(--radius-lg, 20px);
       box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1));
       overflow: hidden;
       display: flex;
       flex-direction: column;
-
-      /* 不要なマージンをリセット */
-      margin-bottom: 0;
     }
 
     /* 画像のスタイル */
     .shorts-card__image {
-      /* カードの高さの約40%を画像の高さにする */
       height: 40%;
       width: 100%;
       object-fit: cover;
@@ -65,7 +58,7 @@
       padding: 16px;
       display: flex;
       flex-direction: column;
-      flex-grow: 1; /* 残りの高さをすべて埋める */
+      flex-grow: 1;
     }
     
     .shorts-card__title {
@@ -78,8 +71,8 @@
       font-size: 14px;
       color: #6c757d;
       margin-bottom: 16px;
-      overflow-y: auto; /* 内容が多い場合にスクロール可能にする */
-      flex-grow: 1; /* タイトルとボタン以外のスペースを埋める */
+      overflow-y: auto;
+      flex-grow: 1;
     }
 
     .shorts-card__link {
@@ -91,13 +84,7 @@
       font-size: 14px;
       background-color: var(--color-primary, #E76F51);
       color: white;
-      transition: background-color 0.2s ease;
-      text-align: center;
-    }
-    .shorts-card__link:hover {
-      background-color: var(--color-primary-dark, #D76041);
-    }
-  </style>
+      transition: background-color 0.
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
