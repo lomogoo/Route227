@@ -547,3 +547,10 @@ body.pwa .footer-nav {
 .pwa-banner.hidden {
   display: none !important;
 }
+
+/* style.css の一番最後に追加 */
+
+#load-more-container {
+  /* 下部フッター(高さ約65px)と重ならないように、十分な余白を確保 */
+  margin-bottom: 80px; 
+}
