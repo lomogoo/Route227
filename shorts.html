@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>227 Shorts</title>
+
+  <!-- Tailwind CDN（開発だけならこれで十分） -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Scroll-Snap 用の追加スタイル -->
+  <style>
+    #feed {scroll-snap-type: y mandatory; height: 100vh; overflow-y: scroll;}
+    .card {scroll-snap-align: start; height: 100vh;}
+    .abs  {position:absolute; inset:0;}
+  </style>
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-black">
+
+  <!-- ここにカードが無限追加される -->
+  <div id="feed"></div>
+
+  <!-- カード用テンプレート -->
+  <template id="tpl">
+    <section class="card relative flex flex-col justify-end">
+      <img class="abs w-full h-full object-cover" loading="lazy">
+      <div class="relative bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+        <h2 class="font-bold text-lg leading-tight mb-3"></h2>
+        <p class="text-sm mb-4 line-clamp-3"></p>
+        <a target="_blank"
+           class="inline-block bg-white text-black px-4 py-2 rounded-md text-xs font-semibold">
+           記事を読む
+        </a>
+      </div>
+    </section>
+  </template>
+
+  <!-- メインロジック -->
+  <script src="shorts.js" type="module"></script>
+</body>
+</html>
