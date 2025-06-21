@@ -519,8 +519,8 @@ function initializeNotificationButton() {
       default: // 'default'
         iconHtml = icons.default;
         clickHandler = () => {
-          // OneSignalのスライドダウンプロンプトを手動で表示
-          window.OneSignal.Slidedown.prompt();
+          // v6：明示的に Permission をリクエスト
+          OneSignal.Notifications.requestPermission();
         };
         break;
     }
@@ -531,14 +531,12 @@ function initializeNotificationButton() {
   // OneSignal SDK の準備ができたら実行
   window.OneSignalDeferred.push(function(OneSignal) {
     // 許可状態が変更されたら、リアルタイムでボタンの表示を更新
-    OneSignal.on('permissionChange', (permission) => {
+    OneSignal.Notifications.on('permissionChange', (permission) => {
       updateButton(permission);
     });
     
     // 初期表示のために、現在の許可状態を取得してボタンを生成
-    OneSignal.getNotificationPermission().then(permission => {
-      updateButton(permission);
-    });
+    updateButton(OneSignal.Notifications.permission);
   });
 }
 /**
