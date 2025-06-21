@@ -554,3 +554,21 @@ window.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('pwa');
   }
 });
+
+
+window.addEventListener('DOMContentLoaded', () => {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const hasSeenBanner = localStorage.getItem('pwa-banner-shown');
+
+  if (!isStandalone && !hasSeenBanner) {
+    const banner = document.getElementById('pwa-banner');
+    const closeBtn = document.getElementById('pwa-banner-close');
+
+    banner.classList.remove('hidden');
+
+    closeBtn.addEventListener('click', () => {
+      banner.classList.add('hidden');
+      localStorage.setItem('pwa-banner-shown', 'true');
+    });
+  }
+});
