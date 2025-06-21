@@ -491,5 +491,5 @@ input[type="text"] {
 
 /* PWA起動時の下部メニュー */
 body.pwa .footer-nav {
-  height: 80px; /* ← PWA用に少し高くする（例） */
+  height: 85px; /* ← PWA用に少し高くする（例） */
 }
