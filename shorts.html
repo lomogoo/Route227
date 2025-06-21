@@ -20,9 +20,11 @@
       overflow-y: scroll;
       scroll-snap-type: y mandatory;
 
-      /* ★★★ 変更点 ★★★ */
       /* コンテナ自体のパディングは不要なので削除 */
       padding: 0;
+      
+      /* ▼▼▼ この1行を追加 ▼▼▼ */
+      scroll-snap-stop: always;
     }
 
     .card.shorts-card {
