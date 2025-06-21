@@ -66,5 +66,38 @@ function setupIntersectionObserver() {
     io.observe(feed.lastElementChild);
 }
 
+// --- スクロールをピタッと止めるための追加ロジック ---
+
+// スクロールするコンテナ要素を取得
+const scrollContainer = document.getElementById('feed');
+// タイマーを管理するための変数を準備
+let scrollTimer = null;
+
+// コンテナがスクロールされるたびに、以下の処理を実行
+scrollContainer.addEventListener('scroll', () => {
+  // もしタイマーが既にセットされていたら、一度リセットする
+  // (スクロールが続いている間は、補正処理が動かないようにするため)
+  clearTimeout(scrollTimer);
+
+  // スクロールが止まったら実行されるタイマーを新たにセット
+  scrollTimer = setTimeout(() => {
+    // 1カード分の高さ（コンテナ自身の高さ）を取得
+    const containerHeight = scrollContainer.offsetHeight;
+    
+    // 現在のスクロール位置から、最も近いカードの番号（インデックス）を計算
+    const targetIndex = Math.round(scrollContainer.scrollTop / containerHeight);
+    
+    // そのカードが表示されるべき、本来のスクロール位置を計算
+    const targetScrollTop = targetIndex * containerHeight;
+
+    // 計算した「あるべき位置」へ、スムーズにスクロールさせてズレを補正する
+    scrollContainer.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth'
+    });
+    
+  }, 100); // 100ミリ秒(0.1秒)間スクロールがなければ「止まった」とみなす
+});
+
 // 最初にフィードを初期化
 initializeFeed();
