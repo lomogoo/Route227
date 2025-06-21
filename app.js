@@ -570,3 +570,12 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// app.js の一番最後に追加
+
+window.addEventListener('pageshow', function(event) {
+  // ブラウザの「戻る」ボタンなどでページがキャッシュから復元された場合にリロードする
+  if (event.persisted) {
+    window.location.reload();
+  }
+});
