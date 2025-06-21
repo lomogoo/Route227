@@ -436,10 +436,15 @@ function showSummaryModal(articleId) {
 
     titleEl.textContent = article.title;
     bulletsEl.innerHTML = article.summary_points?.map(point => `<li>${point.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('') || '';
-    readMoreBtn.href = article.article_url;
-    modal.classList.add('active');
+    const articleUrl = article.article_url?.trim();
+  if (!articleUrl) {
+    readMoreBtn.style.display = 'none';  // URLが空のときは非表示
+  } else {
+    readMoreBtn.href = articleUrl;
+    readMoreBtn.style.display = 'flex';  // 表示（もしくは 'inline-flex'）
+  }
+  modal.classList.add('active');
 }
-
 function promiseWithTimeout(promise, ms, timeoutError = new Error('Promise timed out')) {
   const timeout = new Promise((_, reject) => {
     const id = setTimeout(() => {
