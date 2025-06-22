@@ -142,6 +142,8 @@ function setupStaticEventListeners() {
   initializeNotificationButton();
 }
 
+// app.js の中の showSection 関数を検索し、以下のように修正
+
 async function showSection(sectionId, isInitialLoad = false) {
   const appLoader = document.getElementById('app-loader');
   if (!isInitialLoad) appLoader.classList.add('active');
@@ -156,6 +158,7 @@ async function showSection(sectionId, isInitialLoad = false) {
     sectionElement.classList.add('active');
     if (sectionId === 'feed-section') await initializeFeedPage();
     else if (sectionId === 'foodtruck-section') initializeFoodtruckPage();
+    else if (sectionId === 'rank-section') initializeRankPage(); // ★この行を追加
   }
   
   if (!isInitialLoad) {
@@ -579,3 +582,206 @@ window.addEventListener('pageshow', function(event) {
     window.location.reload();
   }
 });
+
+
+
+
+
+
+
+
+// app.js の一番最後に追加
+
+/**
+ * ============================================
+ * Rank System Logic
+ * ============================================
+ */
+let rankSystemInstance = null; // ランクシステムのインスタンスを管理
+
+class RankSystem {
+    constructor() {
+        this.currentXP = 0;
+        this.currentRank = 1;
+        this.totalXP = 0;
+        this.confettiCount = 100;
+
+        // DOM Elements
+        this.medal = document.getElementById('rank-medal');
+        this.rankName = document.getElementById('rank-name');
+        this.xpToNextRank = document.getElementById('xp-to-next-rank');
+        this.progressBar = document.getElementById('progress-bar');
+        this.progressText = document.getElementById('progress-text');
+        this.rankList = document.getElementById('rank-list');
+        this.sparklesContainer = document.querySelector('.sparkles');
+        this.glowEffect = document.querySelector('.glow-effect');
+
+        this.addProgressBtn = document.getElementById('addProgressBtn');
+        this.rankUpBtn = document.getElementById('rankUpBtn');
+
+        this.ranks = [
+            { id: 1, name: "ブロンズ", color: "#B8860B", maxXP: 100, rotations: 3 },
+            { id: 2, name: "シルバー", color: "#C0C0C0", maxXP: 250, rotations: 3.5 },
+            { id: 3, name: "ゴールド", color: "#FFD700", maxXP: 500, rotations: 4 },
+            { id: 4, name: "プラチナ", color: "#E5E4E2", maxXP: 1000, rotations: 4.5 },
+            { id: 5, name: "ダイヤモンド", color: "#B9F2FF", maxXP: 2000, rotations: 5 },
+            { id: 6, name: "マスター", color: "#9c67e6", maxXP: 5000, rotations: 5.5 },
+            { id: 7, name: "グランドマスター", color: "#ff5f5f", maxXP: 10000, rotations: 6 },
+            { id: 8, name: "レジェンダリー", color: "#FFD700", maxXP: Infinity, rotations: 10 },
+        ];
+
+        this.init();
+    }
+
+    init() {
+        this.addProgressBtn.addEventListener('click', () => this.addProgress(10));
+        this.rankUpBtn.addEventListener('click', () => this.rankUp());
+        this.populateRankList();
+        this.updateDisplay();
+    }
+    
+    addProgress(xp) {
+        if (this.currentRank >= this.ranks.length) return;
+        const currentRankData = this.ranks[this.currentRank - 1];
+        this.currentXP += xp;
+        this.totalXP += xp;
+        if (this.currentXP >= currentRankData.maxXP) {
+            this.currentXP = currentRankData.maxXP;
+        }
+        this.updateDisplay();
+    }
+
+    rankUp() {
+        if (this.currentRank >= this.ranks.length) return;
+        const currentRankData = this.ranks[this.currentRank - 1];
+        if (this.currentXP < currentRankData.maxXP) return;
+
+        this.currentRank++;
+        const xpOver = this.currentXP - currentRankData.maxXP;
+        this.currentXP = xpOver;
+        
+        this.playEnhancedRotationAnimation();
+        this.playCelebrationEffects();
+        this.updateDisplay();
+    }
+
+    updateDisplay() {
+        const currentRankData = this.ranks[this.currentRank - 1];
+        const nextRankData = this.ranks[this.currentRank] || null;
+
+        // Update rank name and XP
+        this.rankName.textContent = currentRankData.name;
+        if (nextRankData) {
+            this.xpToNextRank.textContent = `${nextRankData.maxXP - this.currentXP}`;
+            const progress = (this.currentXP / currentRankData.maxXP) * 100;
+            this.progressBar.style.width = `${progress}%`;
+            this.progressText.textContent = `${this.currentXP} / ${currentRankData.maxXP} XP`;
+        } else {
+            this.xpToNextRank.textContent = "∞";
+            this.progressBar.style.width = '100%';
+            this.progressText.textContent = "MAX RANK";
+        }
+
+        this.updateMedalAppearance();
+        this.updateRankListHighlight();
+    }
+
+    updateMedalAppearance() {
+        const currentRankData = this.ranks[this.currentRank - 1];
+        this.medal.className = 'medal'; // Reset classes
+        const rankClass = `rank-${currentRankData.name.toLowerCase()}`;
+        this.medal.classList.add(rankClass.replace(' ', '')); // e.g., grandmaster
+        this.progressBar.style.backgroundColor = currentRankData.color;
+        this.glowEffect.style.background = `radial-gradient(circle, ${currentRankData.color}33, transparent 70%)`;
+    }
+
+    populateRankList() {
+        this.rankList.innerHTML = '';
+        this.ranks.forEach(rank => {
+            const li = document.createElement('li');
+            li.className = 'rank-list-item';
+            li.dataset.rankId = rank.id;
+            const rankClass = `rank-${rank.name.toLowerCase().replace(' ', '')}`;
+
+            li.innerHTML = `
+                <div class="rank-list-icon ${rankClass}"></div>
+                <div class="rank-list-info">
+                    <span class="name">${rank.name}</span>
+                    <span class="xp">到達XP: ${rank.maxXP === Infinity ? 'MAX' : rank.maxXP}</span>
+                </div>
+            `;
+            this.rankList.appendChild(li);
+        });
+    }
+
+    updateRankListHighlight() {
+        document.querySelectorAll('.rank-list-item').forEach(item => {
+            item.classList.remove('current-rank');
+            if (parseInt(item.dataset.rankId) === this.currentRank) {
+                item.classList.add('current-rank');
+            }
+        });
+    }
+    
+    playEnhancedRotationAnimation() {
+        const currentRankData = this.ranks[this.currentRank - 2];
+        const rotations = currentRankData.rotations;
+        const styleSheet = document.styleSheets[0];
+        const keyframes = `
+            @keyframes enhancedRotation {
+                0% { transform: rotateY(0) rotateZ(0) scale(1); }
+                20% { transform: rotateY(${rotations / 3 * 360}deg) rotateZ(10deg) scale(1.2); }
+                80% { transform: rotateY(${rotations / 3 * 2 * 360}deg) rotateZ(-10deg) scale(1.2); }
+                100% { transform: rotateY(${rotations * 360}deg) rotateZ(0) scale(1); }
+            }`;
+        
+        // Remove old animation if exists
+        const existingAnimation = Array.from(styleSheet.cssRules).findIndex(rule => rule.name === 'enhancedRotation');
+        if (existingAnimation > -1) styleSheet.deleteRule(existingAnimation);
+
+        styleSheet.insertRule(keyframes, styleSheet.cssRules.length);
+        
+        this.medal.style.animation = 'none';
+        void this.medal.offsetWidth; // Trigger reflow
+        this.medal.style.animation = `enhancedRotation 3s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards`;
+        
+        setTimeout(() => {
+            this.medal.style.animation = `float 3s ease-in-out infinite`;
+        }, 3000);
+    }
+
+    playCelebrationEffects() {
+        // Sparkles
+        for (let i = 0; i < 50; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.setProperty('--x-end', `${(Math.random() - 0.5) * 400}px`);
+            sparkle.style.setProperty('--y-end', `${(Math.random() - 0.5) * 400}px`);
+            this.sparklesContainer.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 800);
+        }
+
+        // Confetti (using a simple DOM-based approach)
+        const appRoot = document.getElementById('app-root');
+        for (let i = 0; i < this.confettiCount; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = this.ranks[Math.floor(Math.random() * this.ranks.length)].color;
+            confetti.style.animationDelay = Math.random() * 2 + 's';
+            appRoot.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 5000);
+        }
+    }
+}
+
+/**
+ * ▼▼▼ [ここから変更] 既存コードへの統合部分 ▼▼▼
+ */
+
+// ランクページ初期化関数
+function initializeRankPage() {
+    if (!rankSystemInstance) {
+        rankSystemInstance = new RankSystem();
+    }
+}
