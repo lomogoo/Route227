@@ -547,9 +547,28 @@ body.pwa .footer-nav {
 .pwa-banner.hidden {
   display: none !important;
 }
-
 /* style.css の一番最後に追加 */
 
+/* トースト通知用のスタイル */
+#toast-notification {
+  position: fixed; /* 画面に固定 */
+  bottom: 20px;    /* 下から20pxの位置 */
+  left: 50%;       /* 中央寄せのための準備 */
+  transform: translateX(-50%); /* 中央に配置 */
+  background-color: rgba(0, 0, 0, 0.75); /* 半透明の黒 */
+  color: white;          /* 文字は白 */
+  padding: 12px 24px;    /* 内側の余白 */
+  border-radius: 25px;   /* 角を丸くする */
+  z-index: 1000;         /* 他の要素より手前に表示 */
+  opacity: 0;            /* 初期状態では非表示（透明） */
+  transition: opacity 0.5s ease-in-out; /* 表示・非表示を滑らかに */
+  pointer-events: none;  /* メッセージがクリックの邪魔にならないように */
+}
+
+/* JavaScriptでこのクラスを付けると表示される */
+#toast-notification.show {
+  opacity: 1;
+}
 #load-more-container {
   /* 下部フッター(高さ約65px)と重ならないように、十分な余白を確保 */
   margin-bottom: 80px; 
