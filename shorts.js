@@ -9,20 +9,20 @@ const supabase = createClient(
 const feed = document.getElementById("feed");
 const tpl  = document.getElementById("tpl");
 
-// ★★★ 変更点 1: セッションで共有する変数を定義 ★★★
-// ページ読み込み時に、-1から1の間のランダムなシード値を1つ生成
+// セッションで共有する変数を定義 (変更なし)
 let sessionSeed = Math.random() * 2 - 1;
-// 現在の再生リストの位置（オフセット）を記録
 let articleOffset = 0;
 
 
 // 3. 記事を1件読み込んで画面に表示する関数
 async function loadCard() {
-  // ★★★ 変更点 2: VIEWではなく、作成したRPC関数を呼び出す ★★★
-  const { data: art, error } = await supabase
+  // ★★★ ここからが修正箇所です ★★★
+
+  // 1. RPC関数を呼び出す (変数名を`articles`に変更)
+  const { data: articles, error } = await supabase
     .rpc('get_seeded_shorts_articles', {
-        p_seed: sessionSeed,     // ページ読み込み時に決めたシード値を渡す
-        p_offset: articleOffset  // 次に取得したい記事の位置を渡す
+        p_seed: sessionSeed,
+        p_offset: articleOffset
     });
 
   if (error) {
@@ -30,21 +30,24 @@ async function loadCard() {
     return;
   }
   
-  // ★★★ 変更点 3: ループ処理（最後までいったら最初に戻る） ★★★
-  // もしartがnullなら、全記事を読み終わったということ
-  if (!art) {
+  // 2. 結果が空の配列か、そもそもデータがないかチェック
+  if (!articles || articles.length === 0) {
     console.log("全記事を一周しました。最初からリスタートします。");
-    articleOffset = 0; // オフセットをリセット
-    // もう一度loadCardを呼び出して、リストの最初の記事を取得
-    // この再帰呼び出しにより、ユーザーは途切れることなくコンテンツを見続けられる
+    articleOffset = 0; 
     await loadCard(); 
-    return; // この後の処理は新しいloadCardに任せる
+    return;
   }
   
+  // 3. 配列から最初の1件を取り出す
+  const art = articles[0];
+
   // 取得できたら、次のためにオフセットを1増やす
   articleOffset++;
 
-  // <template> タグからカードのHTML構造をコピーしてデータを埋め込む (変更なし)
+  // ★★★ 修正箇所はここまで ★★★
+
+
+  // <template> タグからカードのHTML構造をコピーしてデータを埋め込む (この部分は変更なし)
   const node = tpl.content.cloneNode(true);
   node.querySelector("img").src      = art.image_url || "https://placehold.co/720x1280?text=No+Image";
   node.querySelector("h2").textContent = art.title;
