@@ -723,24 +723,38 @@ body.pwa .footer-nav {
   color: #6c757d;
 }
 
-/* Rank Colors */
-.rank-bronze .medal-front { background: linear-gradient(135deg, #8B7355, #B8860B); border: 4px solid #DAA520; }
-.rank-bronze .medal-back { background: linear-gradient(135deg, #B8860B, #8B7355); border: 4px solid #DAA520; }
-.rank-silver .medal-front { background: linear-gradient(135deg, #a8a8a8, #d8d8d8); border: 4px solid #f0f0f0; }
-.rank-silver .medal-back { background: linear-gradient(135deg, #d8d8d8, #a8a8a8); border: 4px solid #f0f0f0; }
-.rank-gold .medal-front { background: linear-gradient(135deg, #b68f24, #f8d438); border: 4px solid #ffed8d; }
-.rank-gold .medal-back { background: linear-gradient(135deg, #f8d438, #b68f24); border: 4px solid #ffed8d; }
-.rank-platinum .medal-front { background: linear-gradient(135deg, #8e9eab, #e0e8ef); border: 4px solid #ffffff; }
-.rank-platinum .medal-back { background: linear-gradient(135deg, #e0e8ef, #8e9eab); border: 4px solid #ffffff; }
-.rank-diamond .medal-front { background: linear-gradient(135deg, #4b92b9, #b0e0e6); border: 4px solid #d4f1f4; }
-.rank-diamond .medal-back { background: linear-gradient(135deg, #b0e0e6, #4b92b9); border: 4px solid #d4f1f4; }
-.rank-master .medal-front { background: linear-gradient(135deg, #573b88, #9c67e6); border: 4px solid #c79bff; }
-.rank-master .medal-back { background: linear-gradient(135deg, #9c67e6, #573b88); border: 4px solid #c79bff; }
-.rank-grandmaster .medal-front { background: linear-gradient(135deg, #a02d2d, #ff5f5f); border: 4px solid #ff8c8c; }
-.rank-grandmaster .medal-back { background: linear-gradient(135deg, #ff5f5f, #a02d2d); border: 4px solid #ff8c8c; }
-.rank-legendary .medal-front { background: radial-gradient(circle, #ffcc00, #ff6600, #ff0000, #9900cc, #3333ff, #0099ff); border: 4px solid #fff; }
-.rank-legendary .medal-back { background: radial-gradient(circle, #0099ff, #3333ff, #9900cc, #ff0000, #ff6600, #ffcc00); border: 4px solid #fff; }
+.medal.rank-bronze .medal-front, .rank-list-icon.rank-bronze { background: linear-gradient(135deg, #8B7355, #B8860B); }
+.medal.rank-bronze .medal-back { background: linear-gradient(135deg, #B8860B, #8B7355); }
+.medal.rank-bronze .medal-front, .medal.rank-bronze .medal-back { border: 4px solid #DAA520; }
 
+.medal.rank-silver .medal-front, .rank-list-icon.rank-silver { background: linear-gradient(135deg, #a8a8a8, #d8d8d8); }
+.medal.rank-silver .medal-back { background: linear-gradient(135deg, #d8d8d8, #a8a8a8); }
+.medal.rank-silver .medal-front, .medal.rank-silver .medal-back { border: 4px solid #f0f0f0; }
+
+.medal.rank-gold .medal-front, .rank-list-icon.rank-gold { background: linear-gradient(135deg, #b68f24, #f8d438); }
+.medal.rank-gold .medal-back { background: linear-gradient(135deg, #f8d438, #b68f24); }
+.medal.rank-gold .medal-front, .medal.rank-gold .medal-back { border: 4px solid #ffed8d; }
+
+.medal.rank-platinum .medal-front, .rank-list-icon.rank-platinum { background: linear-gradient(135deg, #8e9eab, #e0e8ef); }
+.medal.rank-platinum .medal-back { background: linear-gradient(135deg, #e0e8ef, #8e9eab); }
+.medal.rank-platinum .medal-front, .medal.rank-platinum .medal-back { border: 4px solid #ffffff; }
+
+.medal.rank-diamond .medal-front, .rank-list-icon.rank-diamond { background: linear-gradient(135deg, #4b92b9, #b0e0e6); }
+.medal.rank-diamond .medal-back { background: linear-gradient(135deg, #b0e0e6, #4b92b9); }
+.medal.rank-diamond .medal-front, .medal.rank-diamond .medal-back { border: 4px solid #d4f1f4; }
+
+.medal.rank-master .medal-front, .rank-list-icon.rank-master { background: linear-gradient(135deg, #573b88, #9c67e6); }
+.medal.rank-master .medal-back { background: linear-gradient(135deg, #9c67e6, #573b88); }
+.medal.rank-master .medal-front, .medal.rank-master .medal-back { border: 4px solid #c79bff; }
+
+.medal.rank-grandmaster .medal-front, .rank-list-icon.rank-grandmaster { background: linear-gradient(135deg, #a02d2d, #ff5f5f); }
+.medal.rank-grandmaster .medal-back { background: linear-gradient(135deg, #ff5f5f, #a02d2d); }
+.medal.rank-grandmaster .medal-front, .medal.rank-grandmaster .medal-back { border: 4px solid #ff8c8c; }
+
+.medal.rank-legendary .medal-front, .rank-list-icon.rank-legendary { background: radial-gradient(circle, #ffcc00, #ff6600, #ff0000, #9900cc, #3333ff, #0099ff); }
+.medal.rank-legendary .medal-back { background: radial-gradient(circle, #0099ff, #3333ff, #9900cc, #ff0000, #ff6600, #ffcc00); }
+.medal.rank-legendary .medal-front, .medal.rank-legendary .medal-back { border: 4px solid #fff; }
+/* ▲▲▲ [ここまで修正] ▲▲▲ */
 /* Animations */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
