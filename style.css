@@ -598,34 +598,42 @@ body.pwa .footer-nav {
   justify-content: center;
 }
 
+/* style.css の Rank System Styles を修正 */
+
+/* 既存の .medal-face スタイルを削除し、以下のスタイルを追加または修正 */
+
 .medal {
-  width: 100px;
-  height: 100px;
+  width: 120px; /* 少し大きくして見栄えを調整 */
+  height: 120px;
   position: relative;
   transform-style: preserve-3d;
   animation: float 3s ease-in-out infinite;
+  display: flex; /* 追加 */
+  align-items: center; /* 追加 */
+  justify-content: center; /* 追加 */
 }
 
-.medal-face {
-  position: absolute;
+/* ▼▼▼ [ここから追加] メダル画像用のスタイル ▼▼▼ */
+#rankMedalImage {
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  backface-visibility: hidden;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 40px;
-  color: white;
+  object-fit: contain; /* 画像がコンテナ内に収まるように */
+  -webkit-user-drag: none; /* 画像のドラッグを禁止 */
+  user-select: none; /* 画像の選択を禁止 */
 }
+/* ▲▲▲ [ここまで追加] ▲▲▲ */
 
-.medal-front {
-  transform: translateZ(5px);
-}
 
-.medal-back {
-  transform: rotateY(180deg) translateZ(5px);
+/* 既存の .medal-face, .medal-front, .medal-back スタイルは不要なので削除 */
+
+
+/* ランク一覧アイコンのスタイルを修正 */
+.rank-list-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain; /* 追加 */
+  flex-shrink: 0;
+  border-radius: 0; /* 円形にする必要がなければ削除 */
 }
 
 .glow-effect {
@@ -723,38 +731,7 @@ body.pwa .footer-nav {
   color: #6c757d;
 }
 
-.medal.rank-bronze .medal-front, .rank-list-icon.rank-bronze { background: linear-gradient(135deg, #8B7355, #B8860B); }
-.medal.rank-bronze .medal-back { background: linear-gradient(135deg, #B8860B, #8B7355); }
-.medal.rank-bronze .medal-front, .medal.rank-bronze .medal-back { border: 4px solid #DAA520; }
 
-.medal.rank-silver .medal-front, .rank-list-icon.rank-silver { background: linear-gradient(135deg, #a8a8a8, #d8d8d8); }
-.medal.rank-silver .medal-back { background: linear-gradient(135deg, #d8d8d8, #a8a8a8); }
-.medal.rank-silver .medal-front, .medal.rank-silver .medal-back { border: 4px solid #f0f0f0; }
-
-.medal.rank-gold .medal-front, .rank-list-icon.rank-gold { background: linear-gradient(135deg, #b68f24, #f8d438); }
-.medal.rank-gold .medal-back { background: linear-gradient(135deg, #f8d438, #b68f24); }
-.medal.rank-gold .medal-front, .medal.rank-gold .medal-back { border: 4px solid #ffed8d; }
-
-.medal.rank-platinum .medal-front, .rank-list-icon.rank-platinum { background: linear-gradient(135deg, #8e9eab, #e0e8ef); }
-.medal.rank-platinum .medal-back { background: linear-gradient(135deg, #e0e8ef, #8e9eab); }
-.medal.rank-platinum .medal-front, .medal.rank-platinum .medal-back { border: 4px solid #ffffff; }
-
-.medal.rank-diamond .medal-front, .rank-list-icon.rank-diamond { background: linear-gradient(135deg, #4b92b9, #b0e0e6); }
-.medal.rank-diamond .medal-back { background: linear-gradient(135deg, #b0e0e6, #4b92b9); }
-.medal.rank-diamond .medal-front, .medal.rank-diamond .medal-back { border: 4px solid #d4f1f4; }
-
-.medal.rank-master .medal-front, .rank-list-icon.rank-master { background: linear-gradient(135deg, #573b88, #9c67e6); }
-.medal.rank-master .medal-back { background: linear-gradient(135deg, #9c67e6, #573b88); }
-.medal.rank-master .medal-front, .medal.rank-master .medal-back { border: 4px solid #c79bff; }
-
-.medal.rank-grandmaster .medal-front, .rank-list-icon.rank-grandmaster { background: linear-gradient(135deg, #a02d2d, #ff5f5f); }
-.medal.rank-grandmaster .medal-back { background: linear-gradient(135deg, #ff5f5f, #a02d2d); }
-.medal.rank-grandmaster .medal-front, .medal.rank-grandmaster .medal-back { border: 4px solid #ff8c8c; }
-
-.medal.rank-legendary .medal-front, .rank-list-icon.rank-legendary { background: radial-gradient(circle, #ffcc00, #ff6600, #ff0000, #9900cc, #3333ff, #0099ff); }
-.medal.rank-legendary .medal-back { background: radial-gradient(circle, #0099ff, #3333ff, #9900cc, #ff0000, #ff6600, #ffcc00); }
-.medal.rank-legendary .medal-front, .medal.rank-legendary .medal-back { border: 4px solid #fff; }
-/* ▲▲▲ [ここまで修正] ▲▲▲ */
 /* Animations */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
