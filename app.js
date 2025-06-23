@@ -597,25 +597,25 @@ window.addEventListener('pageshow', function(event) {
  * Rank System Logic
  * ============================================
  */
-let rankSystemInstance = null; // ランクシステムのインスタンスを管理
+// let rankSystemInstance = null; // ランクシステムのインスタンスを管理
 
 // app.js 内の class RankSystem { ... } の全体をこちらに差し替え
 
-class RankSystem {
-    constructor() {
-        this.currentXP = 0;
-        this.currentRank = 1;
-        this.totalXP = 0;
-        this.confettiCount = 100;
+// class RankSystem {
+    //constructor() {
+      //  this.currentXP = 0;
+        //this.currentRank = 1;
+       // this.totalXP = 0;
+       // this.confettiCount = 100;
 
         // DOM Elements
-        this.medalContainer = document.getElementById('rank-medal'); // IDのターゲットを親に変更
-        this.rankName = document.getElementById('rank-name');
-        this.xpToNextRank = document.getElementById('xp-to-next-rank');
-        this.progressBar = document.getElementById('progress-bar');
-        this.progressText = document.getElementById('progress-text');
-        this.rankList = document.getElementById('rank-list');
-        this.sparklesContainer = document.querySelector('.sparkles');
+       // this.medalContainer = document.getElementById('rank-medal'); // IDのターゲットを親に変更
+       // this.rankName = document.getElementById('rank-name');
+        //this.xpToNextRank = document.getElementById('xp-to-next-rank');
+        //this.progressBar = document.getElementById('progress-bar');
+       // this.progressText = document.getElementById('progress-text');
+       // this.rankList = document.getElementById('rank-list');
+  /*      this.sparklesContainer = document.querySelector('.sparkles');
         this.glowEffect = document.querySelector('.glow-effect');
 
         this.addProgressBtn = document.getElementById('addProgressBtn');
@@ -784,11 +784,15 @@ class RankSystem {
 
 /**
  * ▼▼▼ [ここから変更] 既存コードへの統合部分 ▼▼▼
- */
+ 
+
 
 // ランクページ初期化関数
+
+/*
 function initializeRankPage() {
     if (!rankSystemInstance) {
         rankSystemInstance = new RankSystem();
     }
 }
+*/
