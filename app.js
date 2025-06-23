@@ -557,19 +557,34 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 
-window.addEventListener('DOMContentLoaded', () => {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  const hasSeenBanner = localStorage.getItem('pwa-banner-shown');
+// 既存のPWAバナーの 'DOMContentLoaded' イベントリスナーをこちらに差し替えてください
 
-  if (!isStandalone && !hasSeenBanner) {
+window.addEventListener('DOMContentLoaded', () => {
+  // アプリがホーム画面から起動されている（スタンドアロンモード）か判定
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+  // PWAとしてインストールされていない場合のみバナーを表示
+  if (!isStandalone) {
     const banner = document.getElementById('pwa-banner');
     const closeBtn = document.getElementById('pwa-banner-close');
+    const bannerImage = document.getElementById('pwa-banner-image'); // IDで画像要素を取得
 
+    // ユーザーのOSがAndroidか判定
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
+    if (isAndroid) {
+      // Androidの場合は 'addhome2.png' を表示
+      bannerImage.src = 'assets/addhome2.png';
+    }
+    // それ以外（iOSなど）の場合は、HTMLに記述されたデフォルトの 'assets/addhome.png' が使われます
+
+    // バナーを表示する
     banner.classList.remove('hidden');
 
+    // 閉じるボタンの処理
     closeBtn.addEventListener('click', () => {
+      // バナーを非表示にするだけ（localStorageへの保存は行わない）
       banner.classList.add('hidden');
-      localStorage.setItem('pwa-banner-shown', 'true');
     });
   }
 });
