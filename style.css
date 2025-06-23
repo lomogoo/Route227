@@ -357,8 +357,11 @@ input[type="text"] {
 
 /* 10. Summary Modal */
 .summary-modal-content {
-  padding: 0;
-  overflow: hidden;
+  /* padding: 0; は削除 */
+  /* overflow: hidden; は削除 */
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh; /*← 高さを画面の85%に制限 */
 }
 .summary-close-btn {
   position: absolute;
@@ -386,6 +389,7 @@ input[type="text"] {
 }
 .summary-text-content {
   padding: 24px;
+  overflow-y: auto; /*← 縦方向にスクロールを許可 */
 }
 #summary-title {
   font-family: var(--font-display);
