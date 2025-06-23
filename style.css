@@ -362,6 +362,7 @@ input[type="text"] {
   display: flex;
   flex-direction: column;
   max-height: 85vh; /*← 高さを画面の85%に制限 */
+  overflow: hidden;
 }
 .summary-close-btn {
   position: absolute;
