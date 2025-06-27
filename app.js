@@ -1,5 +1,5 @@
 /* 1) Supabase 初期化 */
-
+console.log("app.js が実行されました");
 
 const { createClient } = window.supabase;
 const db = createClient(
