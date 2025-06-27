@@ -535,7 +535,7 @@ function initializeNotificationButton() {
   // OneSignal SDK の準備ができたら実行
   window.OneSignalDeferred.push(function(OneSignal) {
     // 許可状態が変更されたら、リアルタイムでボタンの表示を更新
-    OneSignal.Notifications.on('permissionChange', (permission) => {
+    OneSignal.Notifications.addEventListener('permissionChange', (permission) => {
       updateButton(permission);
     });
     
@@ -612,76 +612,80 @@ window.addEventListener('pageshow', function(event) {
 /**
  * [改修版] Supabaseから今日の出店情報と画像を確実に取得し、表示を更新する関数
  */
+/**
+ * [最終改修版] Supabaseから今日の出店情報と画像を確実に取得し、表示を更新する関数
+ */
 async function updateFoodtruckInfo() {
   // 1. HTMLの要素をIDで取得します
   const infoContainer = document.getElementById('today-info-container');
   const imageContainer = document.getElementById('schedule-image-container');
 
-  // 万が一、HTMLのIDが間違っていて要素が見つからない場合は、エラーを記録して処理を中断します
   if (!infoContainer || !imageContainer) {
-    console.error('Error: #today-info-container または #schedule-image-container が見つかりません。index.html を確認してください。');
+    console.error('Error: #today-info-container または #schedule-image-container が見つかりません。');
     return;
   }
 
-  // 2. 処理が始まったことをユーザーに伝えるため、UIを「読み込み中」の状態にします
+  // 2. UIを「読み込み中」の状態にします
   infoContainer.innerHTML = '<p>情報を読み込んでいます...</p>';
   imageContainer.style.display = 'none'; // 画像を一旦非表示に
+  imageContainer.src = ''; // srcをクリア
 
   try {
-    // 3. 今日の日付を 'YYYY-MM-DD' 形式で取得します (日本時間基準)
+    // 3. 今日の日付を 'YYYY-MM-DD' 形式で取得します
     const today = new Date();
-    today.setHours(today.getHours() + 9); // JSTに補正
+    today.setHours(today.getHours() + 9);
     const todayString = today.toISOString().split('T')[0];
-    console.log(`本日の日付 (${todayString}) で情報を検索します。`);
+    console.log(`[OK] 本日の日付 (${todayString}) で情報を検索します。`);
 
-    // 4. Supabaseの 'schedule' テーブルに、今日の日付のデータを問い合わせます
+    // 4. Supabaseの 'schedule' テーブルに問い合わせます
     const { data, error } = await db
       .from('schedule')
-      .select('message, image_name') // 'message' と 'image_name' の列を取得
-      .eq('date', todayString)       // 'date' 列が今日の日付と一致する行を探す
-      .single();                     // 結果は1行だけ、または0行と想定
+      .select('message, image_name')
+      .eq('date', todayString)
+      .single();
 
-    // 5. データベース問い合わせ中にエラーが発生した場合
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116は「データが見つからなかった」という正常なケースなので、それ以外の本当のエラーを投げます
-      throw error;
-    }
+    if (error && error.code !== 'PGRST116') throw error;
 
-    // 6. データが見つかった場合の処理
+    // 5. データが見つかった場合の処理
     if (data) {
-      console.log('データが見つかりました:', data);
-      
-      // テキスト情報を表示します
+      console.log('[OK] データが見つかりました:', data);
       infoContainer.innerHTML = `<p>${data.message ? data.message.replace(/\n/g, '<br>') : 'メッセージがありません'}</p>`;
 
-      // 画像ファイル名が登録されている場合は、画像を表示します
       if (data.image_name) {
-        console.log(`画像ファイル名 (${data.image_name}) のURLを取得します。`);
-        const { data: imageData } = db
-          .storage
-          .from('schedule_images')
-          .getPublicUrl(data.image_name);
+        console.log(`[OK] 画像ファイル名 (${data.image_name}) を元にURLを取得します。`);
+        const { data: imageData } = db.storage.from('schedule_images').getPublicUrl(data.image_name);
         
         if (imageData && imageData.publicUrl) {
-          console.log('画像のURLを取得しました:', imageData.publicUrl);
+          console.log('[OK] 画像のURLを取得しました:', imageData.publicUrl);
+          
+          // ▼▼▼ ここからが新しい、より確実な表示処理です ▼▼▼
           imageContainer.src = imageData.publicUrl;
-          imageContainer.style.display = 'block'; // 画像を表示
+
+          // 画像の読み込みが正常に完了したことを確認してから表示します
+          imageContainer.onload = () => {
+            console.log('[SUCCESS] 画像のロードが完了し、表示します。');
+            imageContainer.style.display = 'block';
+          };
+          // 万が一、URLはあっても画像の読み込みに失敗した場合のエラー処理
+          imageContainer.onerror = () => {
+            console.error('[FAIL] 画像のロードに失敗しました。URLが正しいか、画像ファイルが破損していないか確認してください。');
+          };
+          // ▲▲▲ ここまで ▲▲▲
+
         } else {
-          console.warn('画像のURL取得に失敗しました。');
+          console.warn('[WARN] 画像のURL取得に失敗しました。');
         }
       } else {
-        console.log('この日のデータに画像は登録されていません。');
+        console.log('[INFO] この日のデータに画像は登録されていません。');
       }
 
     } else {
-      // 7. データが見つからなかった場合の処理 (エラーではない)
-      console.log('本日の出店情報データは見つかりませんでした。');
+      console.log('[INFO] 本日の出店情報データは見つかりませんでした。');
       infoContainer.innerHTML = '<p>本日の出店はありません。</p>';
     }
 
   } catch (err) {
-    // 8. tryブロックのどこかで予期せぬエラーが起きた場合の処理
-    console.error('出店情報の取得処理中に致命的なエラーが発生しました。', err);
+    console.error('[FATAL] 出店情報の取得処理中に致命的なエラーが発生しました。', err);
     infoContainer.innerHTML = '<p>エラーが発生しました。情報の取得に失敗しました。</p>';
   }
 }
