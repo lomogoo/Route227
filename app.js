@@ -198,6 +198,7 @@ async function initializeFeedPage() {
 }
 
 function initializeFoodtruckPage() {
+  updateFoodtruckInfo(); 
   if (!globalUID) {
     document.getElementById('login-modal').classList.add('active');
     updateStampDisplay(0);
@@ -599,6 +600,52 @@ window.addEventListener('pageshow', function(event) {
 });
 
 
+
+// `app.js` の一番最後に追加
+
+/**
+ * Supabaseから今日の出店情報を取得し、表示を更新する関数
+ */
+async function updateFoodtruckInfo() {
+  const container = document.getElementById('today-info-container');
+  if (!container) return;
+
+  container.innerHTML = '<p>情報を読み込んでいます...</p>';
+
+  try {
+    // 今日の日付を 'YYYY-MM-DD' 形式で取得
+    const today = new Date();
+    today.setHours(today.getHours() + 9); // JSTに補正
+    const todayString = today.toISOString().split('T')[0];
+
+    // Supabaseの 'schedule' テーブルから今日の日付に一致する情報を取得
+    const { data, error } = await db
+      .from('schedule') // ★ Supabaseに 'schedule' というテーブルを作成する必要があります
+      .select('message')
+      .eq('date', todayString)
+      .single(); // 結果が1件であることを期待
+
+    if (error) {
+      // dataがnullの場合（今日の情報がない場合）はエラー扱いにならないようにする
+      if (error.code === 'PGRST116') {
+        container.innerHTML = '<p>本日の出店はありません。</p>';
+        return;
+      }
+      throw error;
+    }
+
+    if (data && data.message) {
+      // 取得したメッセージを表示（改行を<br>に変換）
+      container.innerHTML = `<p>${data.message.replace(/\n/g, '<br>')}</p>`;
+    } else {
+      container.innerHTML = '<p>本日の出店はありません。</p>';
+    }
+
+  } catch (err) {
+    console.error('出店情報の取得に失敗しました:', err);
+    container.innerHTML = '<p>情報の取得に失敗しました。時間をおいて再度お試しください。</p>';
+  }
+}
 
 
 
