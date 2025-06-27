@@ -7,7 +7,7 @@ importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
  * 1. キャッシュ名のバージョン管理
  * ★★★ アプリのファイルを更新したら、このバージョンを上げてください (例: 'v1' -> 'v2') ★★★
  */
-const CACHE_NAME = 'v4';
+const CACHE_NAME = 'v5';
 
 /**
  * 2. 事前にキャッシュするファイルのリスト
