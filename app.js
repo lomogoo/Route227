@@ -606,44 +606,62 @@ window.addEventListener('pageshow', function(event) {
 /**
  * Supabaseから今日の出店情報を取得し、表示を更新する関数
  */
+/**
+ * Supabaseから今日の出店情報とスケジュール画像を取得し、表示を更新する関数
+ */
 async function updateFoodtruckInfo() {
-  const container = document.getElementById('today-info-container');
-  if (!container) return;
+  const infoContainer = document.getElementById('today-info-container');
+  const imageContainer = document.getElementById('schedule-image-container');
 
-  container.innerHTML = '<p>情報を読み込んでいます...</p>';
+  if (!infoContainer || !imageContainer) return;
+
+  // 初期化
+  infoContainer.innerHTML = '<p>情報を読み込んでいます...</p>';
+  imageContainer.style.display = 'none';
+  imageContainer.src = '';
 
   try {
-    // 今日の日付を 'YYYY-MM-DD' 形式で取得
+    // 今日の日付を 'YYYY-MM-DD' 形式で取得 (JST)
     const today = new Date();
-    today.setHours(today.getHours() + 9); // JSTに補正
+    today.setHours(today.getHours() + 9);
     const todayString = today.toISOString().split('T')[0];
 
-    // Supabaseの 'schedule' テーブルから今日の日付に一致する情報を取得
+    // Supabaseの 'schedule' テーブルから今日の情報を取得
     const { data, error } = await db
-      .from('schedule') // ★ Supabaseに 'schedule' というテーブルを作成する必要があります
-      .select('message')
+      .from('schedule')
+      .select('message, image_name') // ★ image_nameも取得する
       .eq('date', todayString)
-      .single(); // 結果が1件であることを期待
+      .single();
 
-    if (error) {
-      // dataがnullの場合（今日の情報がない場合）はエラー扱いにならないようにする
-      if (error.code === 'PGRST116') {
-        container.innerHTML = '<p>本日の出店はありません。</p>';
-        return;
-      }
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116は「行が存在しない」エラーなので、それ以外の場合にエラーを投げる
       throw error;
     }
 
+    // --- 出店メッセージの表示処理 ---
     if (data && data.message) {
-      // 取得したメッセージを表示（改行を<br>に変換）
-      container.innerHTML = `<p>${data.message.replace(/\n/g, '<br>')}</p>`;
+      infoContainer.innerHTML = `<p>${data.message.replace(/\n/g, '<br>')}</p>`;
     } else {
-      container.innerHTML = '<p>本日の出店はありません。</p>';
+      infoContainer.innerHTML = '<p>本日の出店はありません。</p>';
+    }
+
+    // --- スケジュール画像の表示処理 ---
+    if (data && data.image_name) {
+      // Supabase Storageから画像の公開URLを取得
+      const { data: imageData } = db
+        .storage
+        .from('schedule_images') // ★ ステップ1で作成したバケット名
+        .getPublicUrl(data.image_name); // ★ DBから取得したファイル名
+
+      if (imageData && imageData.publicUrl) {
+        imageContainer.src = imageData.publicUrl;
+        imageContainer.style.display = 'block'; // URL取得後に表示
+      }
     }
 
   } catch (err) {
-    console.error('出店情報の取得に失敗しました:', err);
-    container.innerHTML = '<p>情報の取得に失敗しました。時間をおいて再度お試しください。</p>';
+    console.error('出店情報・画像の取得に失敗しました:', err);
+    infoContainer.innerHTML = '<p>情報の取得に失敗しました。時間をおいて再度お試しください。</p>';
   }
 }
 
