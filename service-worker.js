@@ -84,24 +84,33 @@ self.addEventListener('activate', (e) => {
  * 2. 同時に、裏側でネットワークに最新版をリクエストし、キャッシュを更新する。
  * 3. 次回以降のアクセスでは、更新されたキャッシュが使われる。
  */
-self.addEventListener('fetch', (e) => {
-  // SupabaseやOneSignalへのAPIリクエストはキャッシュ対象外とします
-  if (e.request.url.includes('supabase.co') || e.request.url.includes('onesignal.com')) {
-    return;
-  }
+// service-worker.js の fetch イベントリスナーをこれに置き換えてください
 
+self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+
+  // ★★★ここからが重要な変更点★★★
+  // SupabaseのURL（データベースAPIとStorageの両方）へのリクエストだった場合
+  if (url.origin.includes('supabase.co')) {
+    // キャッシュを一切見ずに、常にネットワークから最新の情報を取得します。
+    // これにより、画像が動的に更新されるようになります。
+    return fetch(e.request);
+  }
+  // ★★★ここまでが重要な変更点★★★
+
+  // それ以外のアセット（HTML, CSS, JS, ローカル画像など）はキャッシュを利用する戦略（従来通り）
   e.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
+      // まずキャッシュに一致するものがあるか確認
       return cache.match(e.request).then((cachedResponse) => {
-        // ネットワークからのレスポンスを非同期で取得
+        // 同時に、ネットワークに新しいものをリクエストしに行く
         const fetchPromise = fetch(e.request).then((networkResponse) => {
-          // リクエストが成功したら、レスポンスのクローンをキャッシュに保存
+          // ネットワークから取得できたら、キャッシュを更新しておく
           cache.put(e.request, networkResponse.clone());
           return networkResponse;
         });
 
-        // キャッシュがあればそれを返し(高速表示)、裏でネットワークリクエストを実行。
-        // キャッシュがなければ、ネットワークリクエストの結果を待つ。
+        // キャッシュがあればそれを先に返し（高速表示）、なければネットワークの結果を待つ
         return cachedResponse || fetchPromise;
       });
     })
