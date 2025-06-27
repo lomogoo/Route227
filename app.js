@@ -615,69 +615,61 @@ window.addEventListener('pageshow', function(event) {
 /**
  * [最終改修版] Supabaseから今日の出店情報と画像を確実に取得し、表示を更新する関数
  */
+/**
+ * [最終FIX版] SupabaseのDBに保存された完全なURLを直接参照して画像を表示する関数
+ */
 async function updateFoodtruckInfo() {
-  // 1. HTMLの要素をIDで取得します
   const infoContainer = document.getElementById('today-info-container');
   const imageContainer = document.getElementById('schedule-image-container');
 
   if (!infoContainer || !imageContainer) {
-    console.error('Error: #today-info-container または #schedule-image-container が見つかりません。');
+    console.error('Error: HTML要素が見つかりません。');
     return;
   }
 
-  // 2. UIを「読み込み中」の状態にします
   infoContainer.innerHTML = '<p>情報を読み込んでいます...</p>';
-  imageContainer.style.display = 'none'; // 画像を一旦非表示に
-  imageContainer.src = ''; // srcをクリア
+  imageContainer.style.display = 'none';
+  imageContainer.src = '';
 
   try {
-    // 3. 今日の日付を 'YYYY-MM-DD' 形式で取得します
     const today = new Date();
     today.setHours(today.getHours() + 9);
     const todayString = today.toISOString().split('T')[0];
     console.log(`[OK] 本日の日付 (${todayString}) で情報を検索します。`);
 
-    // 4. Supabaseの 'schedule' テーブルに問い合わせます
     const { data, error } = await db
       .from('schedule')
-      .select('message, image_name')
+      .select('message, image_name') // image_name列には完全なURLが入っている想定
       .eq('date', todayString)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
 
-    // 5. データが見つかった場合の処理
     if (data) {
       console.log('[OK] データが見つかりました:', data);
       infoContainer.innerHTML = `<p>${data.message ? data.message.replace(/\n/g, '<br>') : 'メッセージがありません'}</p>`;
 
-      if (data.image_name) {
-        console.log(`[OK] 画像ファイル名 (${data.image_name}) を元にURLを取得します。`);
-        const { data: imageData } = db.storage.from('schedule_images').getPublicUrl(data.image_name);
+      // ▼▼▼ 画像処理のロジックをシンプルに変更 ▼▼▼
+      // 'image_name'列に有効なURLが直接入っているかを確認します
+      if (data.image_name && data.image_name.startsWith('http')) {
         
-        if (imageData && imageData.publicUrl) {
-          console.log('[OK] 画像のURLを取得しました:', imageData.publicUrl);
-          
-          // ▼▼▼ ここからが新しい、より確実な表示処理です ▼▼▼
-          imageContainer.src = imageData.publicUrl;
+        console.log('[OK] DBから画像のURLを直接取得しました:', data.image_name);
+        
+        // SupabaseのURL生成処理をせず、DBの値をそのままsrcにセットします
+        imageContainer.src = data.image_name;
 
-          // 画像の読み込みが正常に完了したことを確認してから表示します
-          imageContainer.onload = () => {
-            console.log('[SUCCESS] 画像のロードが完了し、表示します。');
-            imageContainer.style.display = 'block';
-          };
-          // 万が一、URLはあっても画像の読み込みに失敗した場合のエラー処理
-          imageContainer.onerror = () => {
-            console.error('[FAIL] 画像のロードに失敗しました。URLが正しいか、画像ファイルが破損していないか確認してください。');
-          };
-          // ▲▲▲ ここまで ▲▲▲
+        imageContainer.onload = () => {
+          console.log('[SUCCESS] 画像のロードが完了し、表示します。');
+          imageContainer.style.display = 'block';
+        };
+        imageContainer.onerror = () => {
+          console.error('[FAIL] 画像のロードに失敗しました。DBに保存されたURLが正しいか確認してください。');
+        };
 
-        } else {
-          console.warn('[WARN] 画像のURL取得に失敗しました。');
-        }
       } else {
-        console.log('[INFO] この日のデータに画像は登録されていません。');
+        console.log('[INFO] この日のデータに画像URLは登録されていません。');
       }
+      // ▲▲▲ ここまで変更 ▲▲▲
 
     } else {
       console.log('[INFO] 本日の出店情報データは見つかりませんでした。');
@@ -685,12 +677,10 @@ async function updateFoodtruckInfo() {
     }
 
   } catch (err) {
-    console.error('[FATAL] 出店情報の取得処理中に致命的なエラーが発生しました。', err);
+    console.error('[FATAL] 処理中に致命的なエラーが発生しました。', err);
     infoContainer.innerHTML = '<p>エラーが発生しました。情報の取得に失敗しました。</p>';
   }
 }
-
-
 
 
 
