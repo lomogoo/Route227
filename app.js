@@ -285,12 +285,12 @@ function updateRewardButtons(count) {
 }
 
 function showNotification(title, msg) {
-  const modal = document.getElementById('notification-modal');
-  if(modal){
-    document.getElementById('notification-title').textContent = title;
-    document.getElementById('notification-message').textContent = msg;
-    modal.classList.add('active');
-  }
+  const modal = document.getElementById('notification-modal');
+  if(modal){
+    document.getElementById('notification-title').textContent = title;
+    document.getElementById('notification-message').innerHTML = msg; // textContentからinnerHTMLへ変更
+    modal.classList.add('active');
+  }
 }
 
 async function addStamp() {
@@ -301,7 +301,7 @@ async function addStamp() {
     count = await updateStampCount(globalUID, count + 1);
     updateStampDisplay(count);
     updateRewardButtons(count);
-    if (count === 3 || count === 6) showNotification('🎉', count === 3 ? 'コーヒー1杯と交換できます！' : '次回、カレー1杯無料！');
+    if (count === 3 || count === 6) showNotification('🎉', count === 3 ? 'コーヒー1杯と交換できます！<br>あと３スタンプでカレー１杯無料！' : '次回、カレー1杯無料！');
     else showNotification('スタンプ獲得', `現在 ${count} 個`);
   } catch (error) {
     showNotification('エラー', 'スタンプの追加に失敗しました。');
