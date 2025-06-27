@@ -101,12 +101,13 @@ self.addEventListener('fetch', (e) => {
   // それ以外のアセット（HTML, CSS, JS, ローカル画像など）はキャッシュを利用する戦略（従来通り）
   e.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
-      // まずキャッシュに一致するものがあるか確認
       return cache.match(e.request).then((cachedResponse) => {
-        // 同時に、ネットワークに新しいものをリクエストしに行く
         const fetchPromise = fetch(e.request).then((networkResponse) => {
-          // ネットワークから取得できたら、キャッシュを更新しておく
-          cache.put(e.request, networkResponse.clone());
+          // ▼▼▼ ここからが修正箇所 ▼▼▼
+          // GETリクエストで、かつ正常なレスポンスの場合のみキャッシュする
+          if (e.request.method === 'GET' && networkResponse.ok) {
+            cache.put(e.request, networkResponse.clone());
+          }
           return networkResponse;
         });
 
