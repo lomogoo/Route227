@@ -140,8 +140,8 @@ function setupStaticEventListeners() {
     }
   });
 
-  // initializeNotificationButton();
-//}
+  initializeNotificationButton();
+}
 
 // app.js の中の showSection 関数を検索し、以下のように修正
 
