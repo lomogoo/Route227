@@ -79,8 +79,8 @@ function escapeHtml(unsafe) {
 if (!unsafe) return ‘’;
 return unsafe
 .toString()
-.replace(/&/g, “&”)
-.replace(/</g, “<”)
+.replace(/&/g, "&amp;")
+.replace(/</g, "&lt;")
 .replace(/>/g, “>”)
 .replace(/”/g, “"”)
 .replace(/’/g, “'”);
@@ -173,7 +173,7 @@ threshold: 0.01
 // オフライン時のアクションをキューに保存
 function queueAction(action) {
 pendingActions.push({
-…action,
+...action,
 timestamp: Date.now()
 });
 localStorage.setItem(‘pendingActions’, JSON.stringify(pendingActions));
