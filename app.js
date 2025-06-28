@@ -851,12 +851,26 @@ const updateButton = (permission) => {
   let clickHandler = () => {};
   let ariaLabel = '';
 
-  if (isFirstClick(permission)) {
+if (isFirstClick(permission)) {
     // ===== 初回クリック時 =====
     ariaLabel = 'プッシュ通知をオンにしますか？';
-    clickHandler = () => {
-      // 権限リクエスト → 結果でボタン描き直し
-      OneSignal.Notifications.requestPermission().then(updateButton);
+    clickHandler = async () => {
+      try {
+        // ネイティブのNotification APIを直接使用
+        const nativePermission = await Notification.requestPermission();
+        console.log('Native permission result:', nativePermission);
+        
+        // OneSignalに権限の変更を通知させるため、少し待つ
+        setTimeout(() => {
+          // OneSignalの権限状態を再確認してボタンを更新
+          const currentPermission = OneSignal.Notifications.permission;
+          updateButton(currentPermission);
+        }, 100);
+      } catch (error) {
+        console.error('Permission request error:', error);
+        // フォールバック: OneSignalのメソッドを使用
+        OneSignal.Notifications.requestPermission().then(updateButton);
+      }
     };
   } else {
     // ===== ２回目以降（許可・拒否問わず）=====
