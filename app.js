@@ -7,6 +7,33 @@ const db = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k'
 );
 
+
+/****************************************************
+ * 2) OneSignal 初期化（SDK v16）
+ *    ─ serviceWorkerPath / scope を明示 ─
+ ****************************************************/
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+window.OneSignalDeferred.push(function (OneSignal) {
+  OneSignal.init({
+    appId: "8e1dc10e-1525-4db3-9036-dd99f1552711", // ← ご自身のアプリ ID に置換
+    autoRegister: false,  // ベルクリックで opt‑in 制御
+    serviceWorkerPath: "/service-worker.js",
+    serviceWorkerRegistration: { scope: "/" },
+    notifyButton: { enable: false }
+  });
+
+  /* Push 状態のデバッグ */
+  OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
+    console.log("[OneSignal] Push state →", state);
+    if (state.optedIn) {
+      console.log("[OneSignal] User ID:", await OneSignal.User.getOnesignalId());
+    }
+  });
+});
+
+
+
+
 /* 2) グローバル変数 */
 let globalUID = null;
 let html5QrCode = null;
