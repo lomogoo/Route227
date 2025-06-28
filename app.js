@@ -970,7 +970,7 @@ async function updateFoodtruckInfo() {
   }
 
   // 画像を常に表示（Supabase Storageから直接取得）
-  const scheduleImageUrl = 'https://hccairtzksnnqdujalgv.supabase.co/storage/v1/object/public/images/schedule.png';
+  const scheduleImageUrl = 'https://hccairtzksnnqdujalgv.supabase.co/storage/v1/object/public/schedule-images//schedule.png';
   imageContainer.src = scheduleImageUrl;
   imageContainer.style.display = 'block';
   
