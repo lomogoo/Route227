@@ -1,7 +1,4 @@
-// service-worker.js - 改善版
-
-// OneSignal SDKをインポートして、プッシュ通知機能を維持します
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
+importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.min.js');
 
 /**
  * 1. キャッシュ戦略の定義
