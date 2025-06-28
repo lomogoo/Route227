@@ -836,73 +836,86 @@ function handleUrlHash() {
 // app.js
 
 function initializeNotificationButton() {
-  const container = document.getElementById('notification-button-container'); //
+  const container = document.getElementById('notification-button-container');
   if (!container) return;
 
-  // アイコンを1種類に統一 (stroke="currentColor" は削除済み)
-  const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`; //
+  const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
 
-// app.js  ─ initializeNotificationButton() 内
-const updateButton = (permission) => {
-  // --- ★ 追加：初回判定ヘルパー -----------------------------
-  const isFirstClick = (p) => p === 'default' || p === 'unsupported';
-  //-----------------------------------------------------------
+  const updateButton = (permission) => {
+    let clickHandler = () => {};
+    let ariaLabel = '通知設定';
 
-  let clickHandler = () => {};
-  let ariaLabel = '';
-
-if (isFirstClick(permission)) {
-    // ===== 初回クリック時 =====
-    ariaLabel = 'プッシュ通知をオンにしますか？';
     clickHandler = async () => {
       try {
-        // ネイティブのNotification APIを直接使用
-        const nativePermission = await Notification.requestPermission();
-        console.log('Native permission result:', nativePermission);
-        
-        // OneSignalに権限の変更を通知させるため、少し待つ
-        setTimeout(() => {
-          // OneSignalの権限状態を再確認してボタンを更新
-          const currentPermission = OneSignal.Notifications.permission;
-          updateButton(currentPermission);
-        }, 100);
+        const currentNativePermission = Notification.permission;
+        console.log('Current native permission:', currentNativePermission);
+
+        if (currentNativePermission === 'default') {
+          // ネイティブAPIでダイアログを表示
+          const result = await Notification.requestPermission();
+          console.log('Permission dialog result:', result);
+          
+          if (result === 'granted') {
+            showToast('通知が有効になりました！', 'success');
+            
+            // OneSignalに登録
+            if (window.OneSignal) {
+              try {
+                await OneSignal.User.PushSubscription.optIn();
+                console.log('OneSignal subscription successful');
+              } catch (e) {
+                console.log('OneSignal subscription error:', e);
+              }
+            }
+            
+            // テスト通知
+            new Notification('Route227', {
+              body: '通知が正常に有効化されました',
+              icon: './assets/icon-192.png'
+            });
+          }
+          
+          setTimeout(() => updateButton(Notification.permission), 100);
+        } else if (currentNativePermission === 'granted') {
+          showNotification('通知は有効です', 
+            '<p>通知は既に有効になっています。</p>' +
+            '<p style="margin-top:10px;">無効にする場合は以下の手順で：</p>' +
+            '<ul style="font-size:14px;text-align:left;list-style:disc;padding-left:20px;margin-top:10px;">' +
+            '<li><strong>PC:</strong> アドレスバー左の🔒アイコンをクリック</li>' +
+            '<li style="margin-top:8px;"><strong>スマホ:</strong> 端末の「設定」→「アプリ」→「通知」をオフ</li>' +
+            '</ul>'
+          );
+        } else {
+          showNotification('通知がブロックされています',
+            '<p>通知が無効になっています。有効にする方法：</p>' +
+            '<ul style="font-size:14px;text-align:left;list-style:disc;padding-left:20px;margin-top:10px;">' +
+            '<li><strong>PC:</strong> アドレスバー左の🔒アイコンをクリック</li>' +
+            '<li style="margin-top:8px;"><strong>スマホ:</strong> 端末の「設定」→「アプリ」→「通知」をオン</li>' +
+            '</ul>'
+          );
+        }
       } catch (error) {
-        console.error('Permission request error:', error);
-        // フォールバック: OneSignalのメソッドを使用
-        OneSignal.Notifications.requestPermission().then(updateButton);
+        console.error('Notification permission error:', error);
+        showToast('通知設定でエラーが発生しました', 'error');
       }
     };
-  } else {
-    // ===== ２回目以降（許可・拒否問わず）=====
-    ariaLabel = '通知設定の変更方法を表示します';
-    clickHandler = () => {
-      const msg = `
-        <p><strong>通知設定の変更方法</strong></p>
-        <ul style="font-size:14px;text-align:left;list-style:disc;padding-left:20px;">
-          <li><strong>PC:</strong> アドレスバー左の🔒アイコンをクリック</li>
-          <li style="margin-top:8px;"><strong>スマホ:</strong> 端末の「設定」→「アプリ」→「Route227」→「通知」</li>
-        </ul>`;
-      showNotification('通知設定', msg);
-    };
-  }
 
-  // ボタンを再描画
-  container.innerHTML =
-    `<button type="button" aria-label="${ariaLabel}">${bellIcon}</button>`;
-  container.querySelector('button')
-           ?.addEventListener('click', clickHandler);
-};
+    container.innerHTML = `<button type="button" aria-label="${ariaLabel}">${bellIcon}</button>`;
+    container.querySelector('button')?.addEventListener('click', clickHandler);
+  };
+
   // OneSignal SDKが準備できたら実行
-  window.OneSignalDeferred.push(function(OneSignal) {
-    // 権限が変更されたら、ボタンのクリック動作を更新するために再描画
-    OneSignal.Notifications.addEventListener('permissionChange', (permission) => {
-      updateButton(permission);
+  if (window.OneSignalDeferred) {
+    window.OneSignalDeferred.push(function(OneSignal) {
+      OneSignal.Notifications.addEventListener('permissionChange', (permission) => {
+        updateButton(permission);
+      });
+      updateButton(Notification.permission);
     });
-
-    // 初期表示
-    const currentPermission = OneSignal.Notifications.permission;
-    updateButton(currentPermission);
-  });
+  } else {
+    // OneSignalがない場合でも動作
+    updateButton(Notification.permission);
+  }
 }
 
 // PWA判定
@@ -956,9 +969,19 @@ async function updateFoodtruckInfo() {
     return;
   }
 
+  // 画像を常に表示（Supabase Storageから直接取得）
+  const scheduleImageUrl = 'https://hccairtzksnnqdujalgv.supabase.co/storage/v1/object/public/images/schedule.png';
+  imageContainer.src = scheduleImageUrl;
+  imageContainer.style.display = 'block';
+  
+  imageContainer.onerror = () => {
+    console.error('[FAIL] スケジュール画像の読み込みに失敗しました。');
+    imageContainer.style.display = 'none';
+    showToast('スケジュール画像の読み込みに失敗しました', 'error');
+  };
+
+  // テキスト情報の取得（日付条件あり）
   infoContainer.innerHTML = '<p>情報を読み込んでいます…</p>';
-  imageContainer.style.display = 'none';
-  imageContainer.src = '';
 
   try {
     const today = new Date();
@@ -968,37 +991,18 @@ async function updateFoodtruckInfo() {
 
     const { data, error } = await fetchWithRetry(() =>
       db.from('schedule')
-        .select('message, image_name')
+        .select('message')
         .eq('date', todayString)
         .single()
     );
 
     if (error && error.code !== 'PGRST116') throw error;
 
-    if (data) {
-      console.log('[OK] データが見つかりました:', data);
-      infoContainer.innerHTML = `<p>${data.message ? escapeHtml(data.message).replace(/\n/g, '<br>') : 'メッセージがありません'}</p>`;
-
-      if (data.image_name && data.image_name.startsWith('http')) {
-        console.log('[OK] DBから画像のURLを直接取得しました:', data.image_name);
-        
-        imageContainer.src = data.image_name;
-
-        imageContainer.onload = () => {
-          console.log('[SUCCESS] 画像のロードが完了し、表示します。');
-          imageContainer.style.display = 'block';
-        };
-        imageContainer.onerror = () => {
-          console.error('[FAIL] 画像のロードに失敗しました。');
-          showToast('画像の読み込みに失敗しました', 'error');
-        };
-
-      } else {
-        console.log('[INFO] この日のデータに画像URLは登録されていません。');
-      }
-
+    if (data && data.message) {
+      console.log('[OK] メッセージが見つかりました:', data.message);
+      infoContainer.innerHTML = `<p>${escapeHtml(data.message).replace(/\n/g, '<br>')}</p>`;
     } else {
-      console.log('[INFO] 本日の出店情報データは見つかりませんでした。');
+      console.log('[INFO] 本日の出店情報メッセージは見つかりませんでした。');
       infoContainer.innerHTML = '<p>本日の出店はありません。</p>';
     }
   } catch (err) {
