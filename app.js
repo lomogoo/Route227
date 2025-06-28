@@ -831,48 +831,66 @@ function handleUrlHash() {
   }
 }
 
+// app.js
+
 function initializeNotificationButton() {
   const container = document.getElementById('notification-button-container');
   if (!container) return;
 
+  // 3つの状態に対応するSVGアイコンを定義
   const icons = {
+    // 通知が許可されている状態のアイコン (例: ベル)
     granted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+    // 通知がブロックされている状態のアイコン (例: スラッシュ付きのベル)
     denied: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
+    // デフォルト（未設定）の状態のアイコン (例: 疑問符付きのベル)
     default: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
   };
 
   const updateButton = (permission) => {
     let iconHtml = '';
     let clickHandler = () => {};
+    let ariaLabel = '';
 
+    // 古いクラスを削除し、現在の状態クラスを追加
     container.classList.remove('granted', 'denied', 'default');
     container.classList.add(permission);
 
     switch (permission) {
       case 'granted':
         iconHtml = icons.granted;
+        ariaLabel = 'プッシュ通知はオンです。クリックで設定情報を表示します。';
         clickHandler = () => showNotification('設定確認', 'プッシュ通知は既にオンになっています。');
         break;
       case 'denied':
         iconHtml = icons.denied;
+        ariaLabel = 'プッシュ通知はブロックされています。クリックで設定方法を表示します。';
         clickHandler = () => showNotification('設定の変更方法', '通知がブロックされています。ブラウザの設定から変更してください。');
         break;
-      default:
+      default: // 未設定の場合
         iconHtml = icons.default;
+        ariaLabel = 'プッシュ通知をオンにしますか？';
+        // OneSignalに通知許可をリクエストする
         clickHandler = () => {
           OneSignal.Notifications.requestPermission();
         };
         break;
     }
-    container.innerHTML = `<button type="button" aria-label="通知設定">${iconHtml}</button>`;
+    // ボタンのHTMLを生成し、クリックイベントを設定
+    container.innerHTML = `<button type="button" aria-label="${ariaLabel}">${iconHtml}</button>`;
     container.querySelector('button')?.addEventListener('click', clickHandler);
   };
 
+  // OneSignal SDKが準備できたら実行
   window.OneSignalDeferred.push(function(OneSignal) {
+    // 通知許可の状態が変化したらボタンを更新するイベントリスナー
     OneSignal.Notifications.addEventListener('permissionChange', (permission) => {
       updateButton(permission);
     });
-    updateButton(OneSignal.Notifications.permission);
+
+    // ページの読み込み時に現在の通知許可状態を取得してボタンを初期化
+    const currentPermission = OneSignal.Notifications.permission;
+    updateButton(currentPermission);
   });
 }
 
