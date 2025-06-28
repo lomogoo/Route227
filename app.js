@@ -858,13 +858,23 @@ function initializeNotificationButton() {
           if (result === 'granted') {
             showToast('通知が有効になりました！', 'success');
             
-            // OneSignalに登録
-            if (window.OneSignal) {
+            // OneSignalの初期化を確認してから登録
+            if (window.OneSignal && window.OneSignal.User) {
               try {
-                await OneSignal.User.PushSubscription.optIn();
-                console.log('OneSignal subscription successful');
+                // ユーザージェスチャーのコンテキストを維持
+                setTimeout(async () => {
+                  // OneSignalのユーザーIDを取得（すでに登録されているか確認）
+                  const userId = await OneSignal.User.getOnesignalId();
+                  if (!userId) {
+                    // 新規登録が必要な場合
+                    await OneSignal.User.PushSubscription.optIn();
+                    console.log('OneSignal subscription successful');
+                  } else {
+                    console.log('OneSignal already subscribed:', userId);
+                  }
+                }, 100);
               } catch (e) {
-                console.log('OneSignal subscription error:', e);
+                console.log('OneSignal subscription handled:', e.message);
               }
             }
             
@@ -875,16 +885,33 @@ function initializeNotificationButton() {
             });
           }
           
-          setTimeout(() => updateButton(Notification.permission), 100);
+          setTimeout(() => updateButton(Notification.permission), 500);
         } else if (currentNativePermission === 'granted') {
-          showNotification('通知は有効です', 
-            '<p>通知は既に有効になっています。</p>' +
-            '<p style="margin-top:10px;">無効にする場合は以下の手順で：</p>' +
-            '<ul style="font-size:14px;text-align:left;list-style:disc;padding-left:20px;margin-top:10px;">' +
-            '<li><strong>PC:</strong> アドレスバー左の🔒アイコンをクリック</li>' +
-            '<li style="margin-top:8px;"><strong>スマホ:</strong> 端末の「設定」→「アプリ」→「通知」をオフ</li>' +
-            '</ul>'
-          );
+          // すでに許可されている場合、OneSignalの登録状態を確認
+          if (window.OneSignal && window.OneSignal.User) {
+            try {
+              const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
+              const userId = await OneSignal.User.getOnesignalId();
+              
+              if (!isPushEnabled || !userId) {
+                // OneSignalに再登録
+                await OneSignal.User.PushSubscription.optIn();
+                showToast('OneSignalプッシュ通知を再登録しました', 'success');
+              } else {
+                showNotification('通知は有効です', 
+                  '<p>通知は既に有効になっています。</p>' +
+                  `<p style="margin-top:10px;font-size:12px;color:#666;">OneSignal ID: ${userId}</p>` +
+                  '<p style="margin-top:10px;">無効にする場合は以下の手順で：</p>' +
+                  '<ul style="font-size:14px;text-align:left;list-style:disc;padding-left:20px;margin-top:10px;">' +
+                  '<li><strong>PC:</strong> アドレスバー左の🔒アイコンをクリック</li>' +
+                  '<li style="margin-top:8px;"><strong>スマホ:</strong> 端末の「設定」→「アプリ」→「通知」をオフ</li>' +
+                  '</ul>'
+                );
+              }
+            } catch (e) {
+              console.log('OneSignal status check:', e);
+            }
+          }
         } else {
           showNotification('通知がブロックされています',
             '<p>通知が無効になっています。有効にする方法：</p>' +
@@ -906,14 +933,29 @@ function initializeNotificationButton() {
 
   // OneSignal SDKが準備できたら実行
   if (window.OneSignalDeferred) {
-    window.OneSignalDeferred.push(function(OneSignal) {
+    window.OneSignalDeferred.push(async function(OneSignal) {
+      // OneSignalの自動プロンプトを無効化
       OneSignal.Notifications.addEventListener('permissionChange', (permission) => {
-        updateButton(permission);
+        console.log('OneSignal permission changed:', permission);
+        updateButton(Notification.permission);
       });
+      
+      // 初期化時に既に権限がある場合の処理
+      if (Notification.permission === 'granted') {
+        try {
+          const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
+          if (!isPushEnabled) {
+            await OneSignal.User.PushSubscription.optIn();
+            console.log('OneSignal auto-subscribed on init');
+          }
+        } catch (e) {
+          console.log('OneSignal init subscription:', e);
+        }
+      }
+      
       updateButton(Notification.permission);
     });
   } else {
-    // OneSignalがない場合でも動作
     updateButton(Notification.permission);
   }
 }
