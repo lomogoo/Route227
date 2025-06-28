@@ -834,3 +834,38 @@ body.pwa .footer-nav {
   background-size: 1000px 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* style.css */
+
+/* 13. Header Notification Button Styles を拡張 */
+
+#notification-button-container button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+#notification-button-container button:hover {
+  opacity: 1;
+}
+
+#notification-button-container svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* 状態別のスタイル */
+#notification-button-container.granted svg {
+  stroke: var(--color-primary); /* 許可されている場合はプライマリカラー */
+}
+
+#notification-button-container.denied svg {
+  stroke: #dc3545; /* 拒否されている場合は赤色 */
+}
