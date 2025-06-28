@@ -861,11 +861,3 @@ body.pwa .footer-nav {
   height: 24px;
 }
 
-/* 状態別のスタイル */
-#notification-button-container.granted svg {
-  stroke: var(--color-primary); /* 許可されている場合はプライマリカラー */
-}
-
-#notification-button-container.denied svg {
-  stroke: #dc3545; /* 拒否されている場合は赤色 */
-}
