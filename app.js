@@ -833,64 +833,57 @@ function handleUrlHash() {
 
 // app.js
 
+// app.js
+
 function initializeNotificationButton() {
-  const container = document.getElementById('notification-button-container');
+  const container = document.getElementById('notification-button-container'); //
   if (!container) return;
 
-  // 3つの状態に対応するSVGアイコンを定義
-  const icons = {
-    // 通知が許可されている状態のアイコン (例: ベル)
-    granted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
-    // 通知がブロックされている状態のアイコン (例: スラッシュ付きのベル)
-    denied: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
-    // デフォルト（未設定）の状態のアイコン (例: 疑問符付きのベル)
-    default: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 23.277344 4.0175781 C 15.193866 4.3983176 9 11.343391 9 19.380859 L 9 26.648438 L 6.3496094 31.980469 A 1.50015 1.50015 0 0 0 6.3359375 32.009766 C 5.2696804 34.277268 6.9957076 37 9.5019531 37 L 18 37 C 18 40.295865 20.704135 43 24 43 C 27.295865 43 30 40.295865 30 37 L 38.496094 37 C 41.002339 37 42.730582 34.277829 41.664062 32.009766 A 1.50015 1.50015 0 0 0 41.650391 31.980469 L 39 26.648438 L 39 19 C 39 10.493798 31.863289 3.6133643 23.277344 4.0175781 z M 23.417969 7.0136719 C 30.338024 6.6878857 36 12.162202 36 19 L 36 27 A 1.50015 1.50015 0 0 0 36.15625 27.667969 L 38.949219 33.289062 C 39.128826 33.674017 38.921017 34 38.496094 34 L 9.5019531 34 C 9.077027 34 8.8709034 33.674574 9.0507812 33.289062 C 9.0507812 33.289062 9.0507812 33.287109 9.0507812 33.287109 L 11.84375 27.667969 A 1.50015 1.50015 0 0 0 12 27 L 12 19.380859 C 12 12.880328 16.979446 7.3169324 23.417969 7.0136719 z M 21 37 L 27 37 C 27 38.674135 25.674135 40 24 40 C 22.325865 40 21 38.674135 21 37 z"></path>
-</svg>`
-  };
+  // アイコンを1種類に統一 (stroke="currentColor" は削除済み)
+  const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`; //
 
   const updateButton = (permission) => {
-    let iconHtml = '';
     let clickHandler = () => {};
     let ariaLabel = '';
 
-    // 古いクラスを削除し、現在の状態クラスを追加
-    container.classList.remove('granted', 'denied', 'default');
-    container.classList.add(permission);
-
-    switch (permission) {
-      case 'granted':
-        iconHtml = icons.granted;
-        ariaLabel = 'プッシュ通知はオンです。クリックで設定情報を表示します。';
-        clickHandler = () => showNotification('設定確認', 'プッシュ通知は既にオンになっています。');
-        break;
-      case 'denied':
-        iconHtml = icons.denied;
-        ariaLabel = 'プッシュ通知はブロックされています。クリックで設定方法を表示します。';
-        clickHandler = () => showNotification('設定の変更方法', '通知がブロックされています。ブラウザの設定から変更してください。');
-        break;
-      default: // 未設定の場合
-        iconHtml = icons.default;
-        ariaLabel = 'プッシュ通知をオンにしますか？';
-        // OneSignalに通知許可をリクエストする
-        clickHandler = () => {
-          OneSignal.Notifications.requestPermission();
-        };
-        break;
+    // 初回かどうかで処理を分岐
+    if (permission === 'default') {
+      // === 初回クリック時の処理 ===
+      ariaLabel = 'プッシュ通知をオンにしますか？';
+      clickHandler = () => {
+        OneSignal.Notifications.requestPermission();
+      };
+    } else {
+      // === 2回目以降クリック時の処理 (許可・不許可どちらでも同じ) ===
+      ariaLabel = '通知設定の変更方法を表示します。';
+      clickHandler = () => {
+        const message = `
+          <p><strong>通知設定の変更方法</strong></p>
+          <p style="font-size: 14px; text-align: left;">
+            通知のオン・オフは、お使いの環境の設定から変更できます。
+          </p>
+          <ul style="font-size: 14px; text-align: left; padding-left: 20px; list-style-type: disc; margin-top: 10px;">
+            <li><strong>PCの場合:</strong><br>アドレスバーの左にある鍵マークをクリックして設定を変更してください。</li>
+            <li style="margin-top: 10px;"><strong>スマートフォンの場合:</strong><br>端末の「設定」→「アプリ」→「Route227」→「通知」から変更してください。</li>
+          </ul>
+        `;
+        showNotification('通知設定', message); //
+      };
     }
-    // ボタンのHTMLを生成し、クリックイベントを設定
-    container.innerHTML = `<button type="button" aria-label="${ariaLabel}">${iconHtml}</button>`;
+
+    // ボタンをHTMLに描画
+    container.innerHTML = `<button type="button" aria-label="${ariaLabel}">${bellIcon}</button>`;
     container.querySelector('button')?.addEventListener('click', clickHandler);
   };
 
   // OneSignal SDKが準備できたら実行
   window.OneSignalDeferred.push(function(OneSignal) {
-    // 通知許可の状態が変化したらボタンを更新するイベントリスナー
+    // 権限が変更されたら、ボタンのクリック動作を更新するために再描画
     OneSignal.Notifications.addEventListener('permissionChange', (permission) => {
       updateButton(permission);
     });
 
-    // ページの読み込み時に現在の通知許可状態を取得してボタンを初期化
+    // 初期表示
     const currentPermission = OneSignal.Notifications.permission;
     updateButton(currentPermission);
   });
