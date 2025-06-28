@@ -840,42 +840,44 @@ function initializeNotificationButton() {
   if (!container) return;
 
   // アイコンを1種類に統一 (stroke="currentColor" は削除済み)
-  const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`; //
+  const bellIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`; //
 
-  const updateButton = (permission) => {
-    let clickHandler = () => {};
-    let ariaLabel = '';
+// app.js  ─ initializeNotificationButton() 内
+const updateButton = (permission) => {
+  // --- ★ 追加：初回判定ヘルパー -----------------------------
+  const isFirstClick = (p) => p === 'default' || p === 'unsupported';
+  //-----------------------------------------------------------
 
-    // 初回かどうかで処理を分岐
-    if (permission === 'default') {
-      // === 初回クリック時の処理 ===
-      ariaLabel = 'プッシュ通知をオンにしますか？';
-      clickHandler = () => {
-        OneSignal.Notifications.requestPermission();
-      };
-    } else {
-      // === 2回目以降クリック時の処理 (許可・不許可どちらでも同じ) ===
-      ariaLabel = '通知設定の変更方法を表示します。';
-      clickHandler = () => {
-        const message = `
-          <p><strong>通知設定の変更方法</strong></p>
-          <p style="font-size: 14px; text-align: left;">
-            通知のオン・オフは、お使いの環境の設定から変更できます。
-          </p>
-          <ul style="font-size: 14px; text-align: left; padding-left: 20px; list-style-type: disc; margin-top: 10px;">
-            <li><strong>PCの場合:</strong><br>アドレスバーの左にある鍵マークをクリックして設定を変更してください。</li>
-            <li style="margin-top: 10px;"><strong>スマートフォンの場合:</strong><br>端末の「設定」→「アプリ」→「Route227」→「通知」から変更してください。</li>
-          </ul>
-        `;
-        showNotification('通知設定', message); //
-      };
-    }
+  let clickHandler = () => {};
+  let ariaLabel = '';
 
-    // ボタンをHTMLに描画
-    container.innerHTML = `<button type="button" aria-label="${ariaLabel}">${bellIcon}</button>`;
-    container.querySelector('button')?.addEventListener('click', clickHandler);
-  };
+  if (isFirstClick(permission)) {
+    // ===== 初回クリック時 =====
+    ariaLabel = 'プッシュ通知をオンにしますか？';
+    clickHandler = () => {
+      // 権限リクエスト → 結果でボタン描き直し
+      OneSignal.Notifications.requestPermission().then(updateButton);
+    };
+  } else {
+    // ===== ２回目以降（許可・拒否問わず）=====
+    ariaLabel = '通知設定の変更方法を表示します';
+    clickHandler = () => {
+      const msg = `
+        <p><strong>通知設定の変更方法</strong></p>
+        <ul style="font-size:14px;text-align:left;list-style:disc;padding-left:20px;">
+          <li><strong>PC:</strong> アドレスバー左の🔒アイコンをクリック</li>
+          <li style="margin-top:8px;"><strong>スマホ:</strong> 端末の「設定」→「アプリ」→「Route227」→「通知」</li>
+        </ul>`;
+      showNotification('通知設定', msg);
+    };
+  }
 
+  // ボタンを再描画
+  container.innerHTML =
+    `<button type="button" aria-label="${ariaLabel}">${bellIcon}</button>`;
+  container.querySelector('button')
+           ?.addEventListener('click', clickHandler);
+};
   // OneSignal SDKが準備できたら実行
   window.OneSignalDeferred.push(function(OneSignal) {
     // 権限が変更されたら、ボタンのクリック動作を更新するために再描画
