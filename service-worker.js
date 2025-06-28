@@ -243,6 +243,8 @@ self.addEventListener('sync', event => {
 /**
  * 7. プッシュ通知のカスタマイズ
  */
+// プッシュ通知のカスタマイズを削除（OneSignalに任せる）
+/*
 self.addEventListener('push', event => {
   if (event.data) {
     const data = event.data.json();
@@ -272,10 +274,12 @@ self.addEventListener('push', event => {
     );
   }
 });
+*/
 
 /**
  * 8. 通知クリックの処理
  */
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   
