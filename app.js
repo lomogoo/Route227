@@ -831,25 +831,21 @@ function initializeNotificationButton() {
   // クリック時の処理を定義する関数
   const handleBellClick = async () => {
     try {
-      // OneSignal SDKが準備できているか確認
       if (!window.OneSignal) {
         showToast("通知機能の準備中です。少し待ってからもう一度お試しください。", "info");
         return;
       }
       
-      // ★修正点：正しいAPI `OneSignal.Notifications.getPermission()` を使用
+      // ★修正：正しいAPI名 `getPermission()` を使用
       const currentPermission = await OneSignal.Notifications.getPermission();
       console.log("Bell clicked. OneSignal permission status:", currentPermission);
 
       if (currentPermission === 'default') {
-        // 【フロー①】権限が未決定の場合、OneSignalの許可プロンプトを表示
         await OneSignal.Notifications.requestPermission();
       } else if (currentPermission === 'granted') {
-        // 【フロー②】権限が許可済みの場合、OneSignalへの登録(optIn)を試みる
         showToast("通知を登録しています…", "info");
         await OneSignal.User.PushSubscription.optIn();
       } else if (currentPermission === 'denied') {
-        // 【フロー③】権限がブロックされている場合、設定方法を案内
         displayPermissionDeniedPopup();
       }
     } catch (error) {
@@ -898,7 +894,6 @@ function initializeNotificationButton() {
 
   // OneSignal SDKの準備ができてから、イベントリスナーを設定
   window.OneSignalDeferred.push(function (OneSignal) {
-    // ユーザーの購読状態が変わったときのイベント
     OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
       console.log("[OneSignal] Push state has changed:", state);
       if (state.current.optedIn) {
@@ -907,11 +902,9 @@ function initializeNotificationButton() {
       }
     });
 
-    // 通知権限が変わったときのイベント
     OneSignal.Notifications.addEventListener('permissionChange', async (isGranted) => {
       console.log("[OneSignal] Notification permission changed to:", isGranted);
       if (isGranted) {
-        // 権限が許可された直後に、OneSignalへ登録(optIn)を実行
         await OneSignal.User.PushSubscription.optIn();
       } else {
         showToast("通知が許可されませんでした。", "warning");
