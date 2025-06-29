@@ -109,6 +109,14 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+
+    // 【↓ここから追加↓】
+  // OneSignalへのAPIリクエストはService Workerのキャッシュ処理から除外する
+  if (url.hostname.includes('onesignal.com')) {
+    // OneSignalSDK.sw.jsが内部で適切に処理するため、ここでは何もしない
+    return;
+  }
+  // 【↑ここまで追加↑】
   
   // Supabase APIとストレージは常にネットワークから取得
   if (url.hostname.includes('supabase.co')) {
