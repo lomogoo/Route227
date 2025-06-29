@@ -758,7 +758,7 @@ function showSummaryModal(articleId) {
   const readMoreBtn = document.getElementById('summary-read-more');
 
   const placeholderUrl = 'https://via.placeholder.com/400x250.png?text=Route227';
-  const imageUrl = article.image_url || placeholderUrl;
+  const imageUrl = article.image_url || fallbackUrl;
   imgEl.style.backgroundImage = `url('${imageUrl}')`;
 
   titleEl.textContent = article.title;
@@ -829,44 +829,34 @@ function initializeNotificationButton() {
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
 
   // クリック時の処理を定義する関数
-  const setupClickHandler = () => {
-    const button = container.querySelector("button");
-    if (!button) return;
-
-    // 既存のリスナーがあれば削除して、重複を防ぐ
-    button.removeEventListener("click", handleBellClick);
-    button.addEventListener("click", handleBellClick);
-  };
-
-  // ベルクリックの具体的な処理
   const handleBellClick = async () => {
-     try {
-        // OneSignal SDKが準備できているか確認
-        if (!window.OneSignal) {
-            showToast("通知機能の準備中です。少し待ってからもう一度お試しください。", "info");
-            return;
-        }
+    try {
+      // OneSignal SDKが準備できているか確認
+      if (!window.OneSignal) {
+        showToast("通知機能の準備中です。少し待ってからもう一度お試しください。", "info");
+        return;
+      }
+      
+      // ★修正点：正しいAPI `OneSignal.Notifications.getPermission()` を使用
+      const currentPermission = await OneSignal.Notifications.getPermission();
+      console.log("Bell clicked. OneSignal permission status:", currentPermission);
 
-        const currentPermission = await OneSignal.Notifications.getPermissionStatus();
-        console.log("Bell clicked. OneSignal permission status:", currentPermission);
-
-        if (currentPermission === 'default') {
-            // 【フロー①】権限が未決定の場合、OneSignalの許可プロンプトを表示
-            // この後の処理は 'permissionChange' イベントリスナーに委ねる
-            await OneSignal.Notifications.requestPermission();
-        } else if (currentPermission === 'granted') {
-            // 【フロー②】権限が許可済みの場合、OneSignalへの登録(optIn)を試みる
-            showToast("通知を登録しています…", "info");
-            await OneSignal.User.PushSubscription.optIn();
-        } else if (currentPermission === 'denied') {
-            // 【フロー③】権限がブロックされている場合、設定方法を案内
-            displayPermissionDeniedPopup();
-        }
+      if (currentPermission === 'default') {
+        // 【フロー①】権限が未決定の場合、OneSignalの許可プロンプトを表示
+        await OneSignal.Notifications.requestPermission();
+      } else if (currentPermission === 'granted') {
+        // 【フロー②】権限が許可済みの場合、OneSignalへの登録(optIn)を試みる
+        showToast("通知を登録しています…", "info");
+        await OneSignal.User.PushSubscription.optIn();
+      } else if (currentPermission === 'denied') {
+        // 【フロー③】権限がブロックされている場合、設定方法を案内
+        displayPermissionDeniedPopup();
+      }
     } catch (error) {
-        console.error("Notification bell click error:", error);
-        showToast("通知設定でエラーが発生しました", "error");
+      console.error("Notification bell click error:", error);
+      showToast("通知設定でエラーが発生しました", "error");
     }
-  }
+  };
 
   // 権限がブロックされている場合のポップアップ表示
   const displayPermissionDeniedPopup = () => {
@@ -897,15 +887,17 @@ function initializeNotificationButton() {
         }
       });
     }, 100);
-  }
+  };
   
   // 最初にボタンのHTMLを挿入
   container.innerHTML = `<button type="button" aria-label="通知設定">${bellIcon}</button>`;
+  const button = container.querySelector("button");
+  if(button) {
+    button.addEventListener("click", handleBellClick);
+  }
 
   // OneSignal SDKの準備ができてから、イベントリスナーを設定
   window.OneSignalDeferred.push(function (OneSignal) {
-    setupClickHandler();
-
     // ユーザーの購読状態が変わったときのイベント
     OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
       console.log("[OneSignal] Push state has changed:", state);
@@ -915,7 +907,7 @@ function initializeNotificationButton() {
       }
     });
 
-    // 通知権限が変わったときのイベント (iOSのタイミング問題対策の鍵)
+    // 通知権限が変わったときのイベント
     OneSignal.Notifications.addEventListener('permissionChange', async (isGranted) => {
       console.log("[OneSignal] Notification permission changed to:", isGranted);
       if (isGranted) {
