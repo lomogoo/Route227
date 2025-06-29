@@ -10,28 +10,18 @@ const db = createClient(
 
 /****************************************************
  * 2) OneSignal 初期化（SDK v16）
- *    ─ serviceWorkerPath / scope を明示 ─
  ****************************************************/
 window.OneSignalDeferred = window.OneSignalDeferred || [];
 window.OneSignalDeferred.push(function (OneSignal) {
   OneSignal.init({
-    appId: "8e1dc10e-1525-4db3-9036-dd99f1552711", // ← ご自身のアプリ ID に置換
-    autoRegister: false,  // ベルクリックで opt‑in 制御
-    serviceWorkerPath: "/Route227/service-worker.js", 
-    serviceWorkerRegistration: { scope: "/Route227/" }, // scopeも合わせる
+    appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
+    autoRegister: false, 
+    // GitHub Pagesのリポジトリ名に合わせてパスを修正
+    serviceWorkerPath: "/Route227/service-worker.js",
+    serviceWorkerRegistration: { scope: "/Route227/" },
     notifyButton: { enable: false }
   });
-
-  /* Push 状態のデバッグ */
-  OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
-    console.log("[OneSignal] Push state →", state);
-    if (state.optedIn) {
-      console.log("[OneSignal] User ID:", await OneSignal.User.getOnesignalId());
-    }
-  });
 });
-
-
 
 
 /* 2) グローバル変数 */
@@ -56,6 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
   setupOfflineDetection();
   setupImageLazyLoading();
 
+  /*
+  // ===================================================================
+  // ========= START: デバッグのため、このブロックを一時的にすべてコメントアウト =========
+  // ===================================================================
   db.auth.onAuthStateChange(async (event, session) => {
     const previousUID = globalUID;
     globalUID = session?.user?.id || null;
@@ -95,10 +89,36 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+  // =================================================================
+  // ========= END: ここまでを一時的にすべてコメントアウト =========
+  // =================================================================
+  */
+
+
+  // =======================================================================
+  // ========= START: デバッグのため、このコードを一時的に追加してください =========
+  // =======================================================================
+  console.log("DEBUG MODE: Bypassing auth check, starting app directly.");
+  const appLoader = document.getElementById('app-loader');
+  
+  // 認証を無視して、フィードセクションを直接表示試行
+  showSection('feed-section', true)
+    .catch(error => {
+      console.error("DEBUG: Direct call to showSection failed.", error);
+    })
+    .finally(() => {
+      if (appLoader) {
+        appLoader.classList.remove('active');
+        console.log("DEBUG: Loader removed by temporary bypass code.");
+      }
+    });
+  // =====================================================================
+  // ========= END: ここまでを一時的に追加してください =========
+  // =====================================================================
+
 });
 
 /* 4) ユーティリティ関数 */
-// HTMLエスケープ関数
 function escapeHtml(unsafe) {
   if (!unsafe) return '';
   return unsafe
@@ -110,14 +130,12 @@ function escapeHtml(unsafe) {
     .replace(/'/g, "&#039;");
 }
 
-// リトライ機能付きfetch
 async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      // ユーザーに再試行中であることを通知
       if (i > 0) {
         showToast(`接続エラー。再試行中... (${i + 1}/${maxRetries})`, 'warning');
       }
@@ -126,7 +144,6 @@ async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
   }
 }
 
-// トースト通知システム
 function showToast(message, type = 'info', duration = 3000) {
   const toast = document.getElementById('toast-notification');
   if (!toast) return;
@@ -140,7 +157,6 @@ function showToast(message, type = 'info', duration = 3000) {
   }, duration);
 }
 
-// スクリーンリーダー向けの通知
 function announceToScreenReader(message) {
   const announcement = document.createElement('div');
   announcement.setAttribute('role', 'status');
@@ -151,7 +167,6 @@ function announceToScreenReader(message) {
   setTimeout(() => announcement.remove(), 1000);
 }
 
-// オフライン検知
 function setupOfflineDetection() {
   let isOffline = !navigator.onLine;
 
@@ -159,7 +174,6 @@ function setupOfflineDetection() {
     if (isOffline) {
       showToast('オンラインに復帰しました', 'success');
       isOffline = false;
-      // 保留中の操作を実行
       processPendingActions();
     }
   });
@@ -170,7 +184,6 @@ function setupOfflineDetection() {
   });
 }
 
-// 画像の遅延読み込み設定
 function setupImageLazyLoading() {
   if ('IntersectionObserver' in window) {
     imageObserver = new IntersectionObserver((entries, observer) => {
@@ -190,7 +203,6 @@ function setupImageLazyLoading() {
   }
 }
 
-// オフライン時のアクションをキューに保存
 function queueAction(action) {
   pendingActions.push({
     ...action,
@@ -199,7 +211,6 @@ function queueAction(action) {
   localStorage.setItem('pendingActions', JSON.stringify(pendingActions));
 }
 
-// 保留中のアクションを処理
 async function processPendingActions() {
   const stored = localStorage.getItem('pendingActions');
   if (!stored) return;
@@ -218,7 +229,6 @@ async function processPendingActions() {
   pendingActions.length = 0;
 }
 
-// アクションの実行
 async function executeAction(action) {
   switch (action.type) {
     case 'ADD_STAMP':
@@ -328,7 +338,6 @@ function setupStaticEventListeners() {
     }
   });
 
-  // キーボードイベントの追加
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       const activeModal = document.querySelector('.modal.active');
@@ -338,7 +347,7 @@ function setupStaticEventListeners() {
     }
   });
 
-  initializeNotificationButton();
+  // initializeNotificationButton(); // 【★修正点1】この行を一時的にコメントアウト
 }
 
 async function showSection(sectionId, isInitialLoad = false) {
@@ -357,7 +366,6 @@ async function showSection(sectionId, isInitialLoad = false) {
     else if (sectionId === 'foodtruck-section') initializeFoodtruckPage();
     else if (sectionId === 'rank-section') initializeRankPage();
 
-    // セクション変更をスクリーンリーダーに通知
     const sectionName = {
       'feed-section': 'フィード',
       'foodtruck-section': 'スタンプカード',
@@ -453,21 +461,18 @@ function closeModal(modalElement) {
     html5QrCode.stop().catch(console.error);
   }
 
-  // フォーカスを戻す
   const trigger = modalElement.dataset.trigger;
   if (trigger) {
     document.getElementById(trigger)?.focus();
   }
 }
 
-// モーダルを開く際にフォーカストラップを設定
 function openModal(modalElement, triggerId) {
   modalElement.classList.add('active');
   modalElement.dataset.trigger = triggerId;
   trapFocus(modalElement);
 }
 
-// フォーカストラップ
 function trapFocus(modal) {
   const focusableElements = modal.querySelectorAll(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -487,7 +492,6 @@ function trapFocus(modal) {
     }
   });
 
-  // 最初の要素にフォーカス
   setTimeout(() => firstFocusable?.focus(), 100);
 }
 
@@ -525,7 +529,6 @@ async function updateStampCount(uid, newCount) {
 function updateStampDisplay(count) {
   document.querySelectorAll('.stamp').forEach((el, i) => {
     if (i < count && !el.classList.contains('active')) {
-      // 新しく獲得したスタンプにアニメーション
       setTimeout(() => {
         el.classList.add('active');
         el.style.animation = 'stamp-celebrate 0.6s ease-out';
@@ -537,7 +540,6 @@ function updateStampDisplay(count) {
   });
 }
 
-// パーティクルエフェクト
 function createParticles(element) {
   const rect = element.getBoundingClientRect();
   const particles = 15;
@@ -582,7 +584,6 @@ async function addStamp() {
     return;
   }
 
-  // オフラインの場合
   if (!navigator.onLine) {
     queueAction({ type: 'ADD_STAMP' });
     showToast('オフラインです。オンライン復帰後にスタンプを追加します。', 'warning');
@@ -600,7 +601,6 @@ async function addStamp() {
     updateStampDisplay(newCount);
     updateRewardButtons(newCount);
 
-    // 適切なフィードバック
     if (newCount === 3) {
       showNotification('🎉 特典解除！', 'コーヒー1杯と交換できます！<br>あと3スタンプでカレー1杯無料！');
     } else if (newCount === 6) {
@@ -619,7 +619,6 @@ async function addStamp() {
 async function redeemReward(type) {
   if (!globalUID) return;
 
-  // オフラインの場合
   if (!navigator.onLine) {
     queueAction({ type: 'REDEEM_REWARD', rewardType: type });
     showToast('オフラインです。オンライン復帰後に特典を交換します。', 'warning');
@@ -674,7 +673,6 @@ function initQRScanner() {
   });
 }
 
-// 記事カードの作成（改善版）
 function createArticleCard(cardData) {
   const placeholderUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+';
   const fallbackUrl = 'https://via.placeholder.com/400x250.png?text=Route227';
@@ -695,12 +693,10 @@ function createArticleCard(cardData) {
       </div>
     </div>`;
 
-  // 画像の遅延読み込み
   const img = div.querySelector('.lazy-image');
   if (imageObserver) {
     imageObserver.observe(img);
   } else {
-    // IntersectionObserverがサポートされていない場合
     img.src = img.dataset.src;
   }
 
@@ -756,7 +752,6 @@ function renderArticles(category, clearContainer) {
         loadMoreBtn.classList.add('visible');
       }
 
-      // イベントリスナーの設定
       document.querySelectorAll('.article-link').forEach(link => {
         if(link.dataset.listenerAttached) return;
         link.dataset.listenerAttached = 'true';
@@ -764,7 +759,6 @@ function renderArticles(category, clearContainer) {
           const articleId = e.currentTarget.dataset.articleId;
           showSummaryModal(parseInt(articleId, 10));
         });
-        // キーボードアクセシビリティ
         link.addEventListener('keypress', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -802,7 +796,6 @@ function showSummaryModal(articleId) {
 
   titleEl.textContent = article.title;
 
-  // summary_pointsの安全な処理
   if (article.summary_points && Array.isArray(article.summary_points)) {
     bulletsEl.innerHTML = article.summary_points
       .map(point => `<li>${escapeHtml(point).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`)
@@ -858,8 +851,6 @@ function handleUrlHash() {
   }
 }
 
-// app.js のこの関数を丸ごと置き換えてください
-
 function initializeNotificationButton() {
   const container = document.getElementById("notification-button-container");
   if (!container) return;
@@ -877,14 +868,12 @@ function initializeNotificationButton() {
         console.log("Current native permission:", currentNativePermission);
 
         if (currentNativePermission === "default") {
-          /* ------- 権限未決定 → ダイアログ表示 ------- */
           const result = await Notification.requestPermission();
           console.log("Permission dialog result:", result);
 
           if (result === "granted") {
             showToast("通知が有効になりました！", "success");
             
-            //【iOS対策】許可直後に少し待ってから登録処理を実行
             setTimeout(async () => {
               try {
                 if (window.OneSignal && window.OneSignal.User) {
@@ -895,23 +884,21 @@ function initializeNotificationButton() {
                  console.error("[OneSignal] optIn after delay failed:", e);
                  showToast("通知の登録に失敗しました。", "error");
               }
-            }, 500); // 0.5秒待つ
+            }, 500);
 
           } else {
              showToast("通知が許可されませんでした。", "warning");
           }
-          // ボタンの状態を即時更新
           setTimeout(() => updateButton(Notification.permission), 500);
-          
-        else if (currentNativePermission === "granted") {
-          // Toastメッセージをより分かりやすく変更
-          showToast("通知は許可済みです。登録を完了します…", "info"); 
-          if (window.OneSignal && window.OneSignal.User) {
-            await OneSignal.User.PushSubscription.optIn();
-            console.log("[OneSignal] optIn successful on click for already-granted permission.");
-          }
+
+        } else if (currentNativePermission === "granted") {
+            showToast("通知は許可済みです。登録を完了します…", "info");
+            if (window.OneSignal && window.OneSignal.User) {
+              await OneSignal.User.PushSubscription.optIn();
+              console.log("[OneSignal] optIn successful on click for already-granted permission.");
+            }
+
         } else { // 'denied' の場合
-          /* ------- 権限がブロックされている場合 → 設定方法のポップアップを表示 ------- */
           const infoDiv = document.createElement("div");
           infoDiv.id = "notification-info-popup";
           infoDiv.style.cssText = `position:fixed;top:60px;right:20px;background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:300px;z-index:1000;`;
@@ -950,7 +937,6 @@ function initializeNotificationButton() {
     container.querySelector("button")?.addEventListener("click", clickHandler);
   };
 
- /* -------- SDK 準備完了時に実行 -------- */
   window.OneSignalDeferred.push(function (OneSignal) {
     updateButton(Notification.permission);
     
@@ -958,14 +944,12 @@ function initializeNotificationButton() {
       console.log("[OneSignal] Push state →", state);
       if (state.current.optedIn) {
         showToast("通知が有効になりました！", "success");
-        // 【↓ここを修正↓】 メソッド名を正しいものに変更
         console.log("[OneSignal] User ID:", await OneSignal.User.getOneSignalId());
       }
     });
   });
 }
 
-// PWA判定
 window.addEventListener('DOMContentLoaded', () => {
   const isPWA =
     window.matchMedia('(display-mode: standalone)').matches ||
@@ -976,7 +960,6 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// PWAバナー
 window.addEventListener('DOMContentLoaded', () => {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
@@ -999,14 +982,12 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ページキャッシュからの復元時にリロード
 window.addEventListener('pageshow', function(event) {
   if (event.persisted) {
     window.location.reload();
   }
 });
 
-// 今日の出店情報を取得（改善版）
 async function updateFoodtruckInfo() {
   const infoContainer = document.getElementById('today-info-container');
   const imageContainer = document.getElementById('schedule-image-container');
@@ -1016,7 +997,6 @@ async function updateFoodtruckInfo() {
     return;
   }
 
-  // 画像を常に表示（Supabase Storageから直接取得）
   const scheduleImageUrl = 'https://hccairtzksnnqdujalgv.supabase.co/storage/v1/object/public/schedule-images//schedule.png';
   imageContainer.src = scheduleImageUrl;
   imageContainer.style.display = 'block';
@@ -1027,7 +1007,6 @@ async function updateFoodtruckInfo() {
     showToast('スケジュール画像の読み込みに失敗しました', 'error');
   };
 
-  // テキスト情報の取得（日付条件あり）
   infoContainer.innerHTML = '<p>情報を読み込んでいます…</p>';
 
   try {
@@ -1059,13 +1038,10 @@ async function updateFoodtruckInfo() {
   }
 }
 
-// ランクページ初期化（現在は無効化されているが、将来の実装用に残す）
 function initializeRankPage() {
-  // 将来の実装用
   console.log('Rank page initialization placeholder');
 }
 
-// スクリーンリーダー用のスタイル
 const srOnlyStyle = document.createElement('style');
 srOnlyStyle.textContent = `.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`;
 document.head.appendChild(srOnlyStyle);
