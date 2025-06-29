@@ -12,14 +12,30 @@ const db = createClient(
  * 2) OneSignal 初期化（SDK v16）
  ****************************************************/
 window.OneSignalDeferred = window.OneSignalDeferred || [];
-window.OneSignalDeferred.push(function (OneSignal) {
-  OneSignal.init({
+window.OneSignalDeferred.push(async function (OneSignal) {
+  await OneSignal.init({
     appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
-    autoRegister: false,
     serviceWorkerPath: "/Route227/service-worker.js",
-    serviceWorkerRegistration: { scope: "/Route227/" },
-    notifyButton: { enable: false }
+    serviceWorkerParam: { scope: "/Route227/" },
+    notifyButton: { enable: false },
+    // 自動プロンプトを無効化
+    promptOptions: {
+      autoPrompt: false,
+      native: {
+        enabled: false,
+        autoPrompt: false
+      },
+      slidedown: {
+        enabled: false,
+        autoPrompt: false
+      }
+    },
+    // 自動登録を防ぐ
+    allowLocalhostAsSecureOrigin: true
   });
+  
+  // 初期化完了フラグを設定
+  window.OneSignalInitialized = true;
 });
 
 
@@ -819,7 +835,7 @@ function handleUrlHash() {
 }
 
 /**
- * 8) 通知ボタンの初期化と処理（新・最終版）
+ * 8) 通知ボタンの初期化と処理（修正版）
  */
 function initializeNotificationButton() {
   const container = document.getElementById("notification-button-container");
@@ -828,29 +844,74 @@ function initializeNotificationButton() {
   const bellIcon =
     '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
 
+  // PWA判定
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                window.navigator.standalone === true;
+
+  // 非PWA環境では通知ボタンを非表示にする（オプション）
+  // if (!isPWA) {
+  //   container.style.display = 'none';
+  //   return;
+  // }
+
   // クリック時の処理を定義する関数
   const handleBellClick = async () => {
     try {
-      if (!window.OneSignal) {
+      // OneSignalの初期化を待つ
+      if (!window.OneSignalInitialized) {
         showToast("通知機能の準備中です。少し待ってからもう一度お試しください。", "info");
         return;
       }
-      
-      // ★修正：正しいAPI名 `getPermission()` を使用
-      const currentPermission = await OneSignal.Notifications.getPermission();
-      console.log("Bell clicked. OneSignal permission status:", currentPermission);
+
+      // 現在の権限状態を確認
+      const currentPermission = await OneSignal.Notifications.permission;
+      console.log("Bell clicked. Current permission:", currentPermission);
+
+      // プッシュ購読状態を確認
+      const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
+      console.log("Push subscription opted in:", isPushEnabled);
 
       if (currentPermission === 'default') {
-        await OneSignal.Notifications.requestPermission();
+        // 権限がまだ設定されていない場合
+        console.log("Requesting notification permission...");
+        const permission = await OneSignal.Notifications.requestPermission();
+        
+        if (permission === true) {
+          console.log("Permission granted, opting in...");
+          // 権限が許可されたら購読
+          await OneSignal.User.PushSubscription.optIn();
+          showToast("通知の登録が完了しました！", "success");
+        } else {
+          showToast("通知が許可されませんでした。", "warning");
+        }
       } else if (currentPermission === 'granted') {
-        showToast("通知を登録しています…", "info");
-        await OneSignal.User.PushSubscription.optIn();
+        // 権限は許可されているが、購読していない場合
+        if (!isPushEnabled) {
+          console.log("Permission already granted, opting in...");
+          await OneSignal.User.PushSubscription.optIn();
+          showToast("通知の登録が完了しました！", "success");
+        } else {
+          // すでに購読している場合
+          showToast("すでに通知を受け取る設定になっています。", "info");
+          
+          // オプション：購読解除の確認
+          if (confirm("通知を解除しますか？")) {
+            await OneSignal.User.PushSubscription.optOut();
+            showToast("通知を解除しました。", "info");
+          }
+        }
       } else if (currentPermission === 'denied') {
+        // 権限がブロックされている場合
         displayPermissionDeniedPopup();
       }
     } catch (error) {
       console.error("Notification bell click error:", error);
-      showToast("通知設定でエラーが発生しました", "error");
+      // エラーメッセージをより詳細に
+      if (error.message && error.message.includes('Service Worker')) {
+        showToast("Service Workerの登録に失敗しました。ページを再読み込みしてください。", "error");
+      } else {
+        showToast("通知設定でエラーが発生しました", "error");
+      }
     }
   };
 
@@ -867,7 +928,7 @@ function initializeNotificationButton() {
       <p style="margin:0 0 12px 0;font-size:14px;color:#666;">❌ 通知はブロックされています</p>
       <div style="background:#f5f5f5;padding:12px;border-radius:8px;font-size:13px;">
         <p style="margin:0 0 8px 0;font-weight:bold;">設定を変更する方法：</p>
-        <p style="margin:0 0 4px 0;">📱 <strong>スマホ:</strong><br>設定 → ブラウザアプリ → 通知</p>
+        <p style="margin:0 0 4px 0;">📱 <strong>スマホ（${isPWA ? 'アプリ' : 'ブラウザ'}）:</strong><br>設定 → ${isPWA ? 'アプリ' : 'ブラウザ'} → 通知</p>
         <p style="margin:0;">💻 <strong>PC:</strong><br>アドレスバーの🔒 → 通知設定</p>
       </div>`;
 
@@ -892,22 +953,27 @@ function initializeNotificationButton() {
     button.addEventListener("click", handleBellClick);
   }
 
-  // OneSignal SDKの準備ができてから、イベントリスナーを設定
-  window.OneSignalDeferred.push(function (OneSignal) {
-    OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
-      console.log("[OneSignal] Push state has changed:", state);
-      if (state.current.optedIn) {
-        showToast("通知の登録が完了しました！", "success");
-        console.log("[OneSignal] User ID:", await OneSignal.User.getOneSignalId());
+  // OneSignal SDKの準備ができてから、状態を更新
+  window.OneSignalDeferred.push(async function (OneSignal) {
+    // 初期状態を確認してボタンの見た目を更新（オプション）
+    try {
+      const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+      if (isOptedIn && button) {
+        button.style.opacity = '1';
       }
-    });
+    } catch (e) {
+      console.log("Could not check initial subscription state:", e);
+    }
 
-    OneSignal.Notifications.addEventListener('permissionChange', async (isGranted) => {
-      console.log("[OneSignal] Notification permission changed to:", isGranted);
-      if (isGranted) {
-        await OneSignal.User.PushSubscription.optIn();
-      } else {
-        showToast("通知が許可されませんでした。", "warning");
+    // イベントリスナーを設定
+    OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
+      console.log("[OneSignal] Push subscription state changed:", state);
+      if (state.current.optedIn && !state.previous.optedIn) {
+        showToast("通知の登録が完了しました！", "success");
+        if (button) button.style.opacity = '1';
+      } else if (!state.current.optedIn && state.previous.optedIn) {
+        showToast("通知を解除しました。", "info");
+        if (button) button.style.opacity = '0.6';
       }
     });
   });
