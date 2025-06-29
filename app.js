@@ -1,4 +1,4 @@
-/* 1) Supabase 初期化 　now */
+/* 1) Supabase 初期化 */
 console.log("app.js が実行されました");
 
 const { createClient } = window.supabase;
@@ -45,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupOfflineDetection();
   setupImageLazyLoading();
 
-  // ★修正点：認証処理を元に戻しました
   db.auth.onAuthStateChange(async (event, session) => {
     const previousUID = globalUID;
     globalUID = session?.user?.id || null;
@@ -315,7 +314,7 @@ function setupStaticEventListeners() {
     }
   });
 
-  // initializeNotificationButton(); // ★修正点：ここは引き続きコメントアウトしたまま
+  initializeNotificationButton();
 }
 
 async function showSection(sectionId, isInitialLoad = false) {
@@ -819,8 +818,107 @@ function handleUrlHash() {
   }
 }
 
+// ★修正点：通知ボタンの初期化処理を、最終版に置き換えました
 function initializeNotificationButton() {
-  /* この関数はデバッグのため、意図的に空にしています */
+  const container = document.getElementById("notification-button-container");
+  if (!container) return;
+
+  const bellIcon =
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+
+  const updateButton = (permission) => {
+    let clickHandler = () => { };
+    let ariaLabel = "通知設定";
+
+    clickHandler = async () => {
+      try {
+        const currentNativePermission = Notification.permission;
+        console.log("Current native permission:", currentNativePermission);
+
+        if (currentNativePermission === "default") {
+          const result = await Notification.requestPermission();
+          console.log("Permission dialog result:", result);
+
+          if (result === "granted") {
+            showToast("通知が有効になりました！", "success");
+
+            // iOSのタイミング問題に対応するため、少し待ってから登録
+            setTimeout(async () => {
+              try {
+                if (window.OneSignal && window.OneSignal.User) {
+                  await OneSignal.User.PushSubscription.optIn();
+                  console.log("[OneSignal] optIn successful after delay");
+                }
+              } catch (e) {
+                console.error("[OneSignal] optIn after delay failed:", e);
+                showToast("通知の登録に失敗しました。", "error");
+              }
+            }, 500); // 0.5秒待つ
+
+          } else {
+            showToast("通知が許可されませんでした。", "warning");
+          }
+          setTimeout(() => updateButton(Notification.permission), 500);
+
+        } else if (currentNativePermission === "granted") {
+          showToast("通知は許可済みです。登録を完了します…", "info");
+          if (window.OneSignal && window.OneSignal.User) {
+            await OneSignal.User.PushSubscription.optIn();
+            console.log("[OneSignal] optIn successful on click for already-granted permission.");
+          }
+
+        } else { // 'denied' の場合
+          const infoDiv = document.createElement("div");
+          infoDiv.id = "notification-info-popup";
+          infoDiv.style.cssText = `position:fixed;top:60px;right:20px;background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:300px;z-index:1000;`;
+          infoDiv.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <h3 style="margin:0;font-size:16px;">通知設定</h3>
+              <button id="close-notification-info" style="background:none;border:none;font-size:20px;cursor:pointer;color:#666;padding:0;width:24px;height:24px;">&times;</button>
+            </div>
+            <p style="margin:0 0 12px 0;font-size:14px;color:#666;">❌ 通知はブロックされています</p>
+            <div style="background:#f5f5f5;padding:12px;border-radius:8px;font-size:13px;">
+              <p style="margin:0 0 8px 0;font-weight:bold;">設定を変更する方法：</p>
+              <p style="margin:0 0 4px 0;">📱 <strong>スマホ:</strong><br>設定 → ブラウザアプリ → 通知</p>
+              <p style="margin:0;">💻 <strong>PC:</strong><br>アドレスバーの🔒 → 通知設定</p>
+            </div>`;
+
+          const existing = document.getElementById("notification-info-popup");
+          if (existing) existing.remove();
+          document.body.appendChild(infoDiv);
+          document.getElementById("close-notification-info").addEventListener("click", () => infoDiv.remove());
+          setTimeout(() => {
+            document.addEventListener("click", function closePopup(e) {
+              if (!infoDiv.contains(e.target) && !container.contains(e.target)) {
+                infoDiv.remove();
+                document.removeEventListener("click", closePopup);
+              }
+            });
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Notification permission error:", error);
+        showToast("通知設定でエラーが発生しました", "error");
+      }
+    };
+
+    container.innerHTML = `<button type="button" aria-label="${ariaLabel}">${bellIcon}</button>`;
+    container.querySelector("button")?.addEventListener("click", clickHandler);
+  };
+
+  /* -------- SDK 準備完了時に実行 -------- */
+  window.OneSignalDeferred.push(function (OneSignal) {
+    updateButton(Notification.permission);
+
+    OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
+      console.log("[OneSignal] Push state →", state);
+      if (state.current.optedIn) {
+        showToast("通知が有効になりました！", "success");
+        // タイプミスを修正
+        console.log("[OneSignal] User ID:", await OneSignal.User.getOneSignalId());
+      }
+    });
+  });
 }
 
 // PWA判定
