@@ -17,19 +17,7 @@ window.OneSignalDeferred.push(async function (OneSignal) {
     appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
     serviceWorkerPath: "/Route227/service-worker.js",
     serviceWorkerParam: { scope: "/Route227/" },
-    notifyButton: { enable: false },
-    // 自動プロンプトを無効化
-    promptOptions: {
-      autoPrompt: false,
-      native: {
-        enabled: false,
-        autoPrompt: false
-      },
-      slidedown: {
-        enabled: false,
-        autoPrompt: false
-      }
-    },
+
     // 自動登録を防ぐ
     allowLocalhostAsSecureOrigin: true
   });
@@ -60,9 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStaticEventListeners();
   setupOfflineDetection();
   setupImageLazyLoading();
-  
-  // PWA初回起動時の通知設定
-  checkAndRequestNotificationForPWA();
 
   db.auth.onAuthStateChange(async (event, session) => {
     const previousUID = globalUID;
@@ -907,12 +892,16 @@ async function checkAndRequestNotificationForPWA() {
 /**
  * 8) 通知ボタンの初期化と処理（修正版）
  */
+
+/**
+
 function initializeNotificationButton() {
   // この関数は使用しないが、互換性のために残す
   return;
   // この関数は使用しないが、互換性のために残す
   return;
 }
+ */
 
 // PWA判定
 window.addEventListener('DOMContentLoaded', () => {
