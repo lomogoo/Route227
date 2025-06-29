@@ -902,15 +902,14 @@ function initializeNotificationButton() {
           }
           // ボタンの状態を即時更新
           setTimeout(() => updateButton(Notification.permission), 500);
-
-        } else if (currentNativePermission === "granted") {
-            //【Android/PC対策】既に許可済みの場合も、クリックをトリガーに登録
-            showToast("通知を登録しています…", "info");
-            if (window.OneSignal && window.OneSignal.User) {
-              await OneSignal.User.PushSubscription.optIn();
-              console.log("[OneSignal] optIn successful on click for already-granted permission.");
-            }
-
+          
+        else if (currentNativePermission === "granted") {
+          // Toastメッセージをより分かりやすく変更
+          showToast("通知は許可済みです。登録を完了します…", "info"); 
+          if (window.OneSignal && window.OneSignal.User) {
+            await OneSignal.User.PushSubscription.optIn();
+            console.log("[OneSignal] optIn successful on click for already-granted permission.");
+          }
         } else { // 'denied' の場合
           /* ------- 権限がブロックされている場合 → 設定方法のポップアップを表示 ------- */
           const infoDiv = document.createElement("div");
@@ -951,18 +950,16 @@ function initializeNotificationButton() {
     container.querySelector("button")?.addEventListener("click", clickHandler);
   };
 
-  /* -------- SDK 準備完了時に実行 -------- */
+ /* -------- SDK 準備完了時に実行 -------- */
   window.OneSignalDeferred.push(function (OneSignal) {
-    // 【Android/PC対策】ページ読み込み時の自動登録処理を削除。
-    // ボタンの初期状態を更新するだけにする。
     updateButton(Notification.permission);
     
-    // OneSignalのSubscription状態が変わった際のデバッグログは残しておく
     OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
       console.log("[OneSignal] Push state →", state);
       if (state.current.optedIn) {
         showToast("通知が有効になりました！", "success");
-        console.log("[OneSignal] User ID:", await OneSignal.User.getOnesignalId());
+        // 【↓ここを修正↓】 メソッド名を正しいものに変更
+        console.log("[OneSignal] User ID:", await OneSignal.User.getOneSignalId());
       }
     });
   });
