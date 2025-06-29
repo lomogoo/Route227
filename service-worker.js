@@ -1,4 +1,4 @@
-importScripts('OneSignalSDK.sw.min.js');
+importScripts('OneSignalSDK.sw.js');
 
 /**
  * 1. キャッシュ戦略の定義
