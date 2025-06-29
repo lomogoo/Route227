@@ -60,6 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
   setupStaticEventListeners();
   setupOfflineDetection();
   setupImageLazyLoading();
+  
+  // PWA初回起動時の通知設定
+  checkAndRequestNotificationForPWA();
 
   db.auth.onAuthStateChange(async (event, session) => {
     const previousUID = globalUID;
@@ -330,7 +333,8 @@ function setupStaticEventListeners() {
     }
   });
 
-  initializeNotificationButton();
+  // ベルマークは非表示にする（PWAでは自動で通知設定するため）
+  // initializeNotificationButton();
 }
 
 async function showSection(sectionId, isInitialLoad = false) {
@@ -835,148 +839,79 @@ function handleUrlHash() {
 }
 
 /**
- * 8) 通知ボタンの初期化と処理（修正版）
+ * 8) PWA初回起動時の通知設定
  */
-function initializeNotificationButton() {
-  const container = document.getElementById("notification-button-container");
-  if (!container) return;
-
-  const bellIcon =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
-
+async function checkAndRequestNotificationForPWA() {
   // PWA判定
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                 window.navigator.standalone === true;
-
-  // 非PWA環境では通知ボタンを非表示にする（オプション）
-  // if (!isPWA) {
-  //   container.style.display = 'none';
-  //   return;
-  // }
-
-  // クリック時の処理を定義する関数
-  const handleBellClick = async () => {
+  
+  if (!isPWA) {
+    console.log("Not in PWA mode, skipping notification setup");
+    return;
+  }
+  
+  // 初回起動かチェック
+  const hasRequestedNotification = localStorage.getItem('pwa_notification_requested');
+  if (hasRequestedNotification === 'true') {
+    console.log("Notification already requested before");
+    return;
+  }
+  
+  // OneSignalの初期化を待つ
+  window.OneSignalDeferred.push(async function (OneSignal) {
     try {
-      // OneSignalの初期化を待つ
-      if (!window.OneSignalInitialized) {
-        showToast("通知機能の準備中です。少し待ってからもう一度お試しください。", "info");
-        return;
-      }
-
+      // 少し遅延を入れる（PWA起動直後は不安定な場合があるため）
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 初回起動フラグを設定（ダイアログ表示前に設定することで、エラーが起きても繰り返さない）
+      localStorage.setItem('pwa_notification_requested', 'true');
+      
       // 現在の権限状態を確認
       const currentPermission = await OneSignal.Notifications.permission;
-      console.log("Bell clicked. Current permission:", currentPermission);
-
-      // プッシュ購読状態を確認
-      const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
-      console.log("Push subscription opted in:", isPushEnabled);
-
+      console.log("PWA first launch. Current permission:", currentPermission);
+      
       if (currentPermission === 'default') {
-        // 権限がまだ設定されていない場合
-        console.log("Requesting notification permission...");
+        // 通知許可を求める
+        showToast("通知を設定しています...", "info");
         const permission = await OneSignal.Notifications.requestPermission();
         
         if (permission === true) {
           console.log("Permission granted, opting in...");
-          // 権限が許可されたら購読
           await OneSignal.User.PushSubscription.optIn();
-          showToast("通知の登録が完了しました！", "success");
+          showToast("🔔 通知の設定が完了しました！", "success");
+          
+          // ユーザーIDをログ出力（デバッグ用）
+          const userId = await OneSignal.User.getOneSignalId();
+          console.log("[OneSignal] User ID:", userId);
         } else {
-          showToast("通知が許可されませんでした。", "warning");
+          showToast("通知が許可されませんでした", "warning");
         }
       } else if (currentPermission === 'granted') {
-        // 権限は許可されているが、購読していない場合
-        if (!isPushEnabled) {
-          console.log("Permission already granted, opting in...");
+        // すでに権限がある場合は購読を確認
+        const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
+        if (!isOptedIn) {
           await OneSignal.User.PushSubscription.optIn();
-          showToast("通知の登録が完了しました！", "success");
-        } else {
-          // すでに購読している場合
-          showToast("すでに通知を受け取る設定になっています。", "info");
-          
-          // オプション：購読解除の確認
-          if (confirm("通知を解除しますか？")) {
-            await OneSignal.User.PushSubscription.optOut();
-            showToast("通知を解除しました。", "info");
-          }
+          showToast("🔔 通知の設定が完了しました！", "success");
         }
-      } else if (currentPermission === 'denied') {
-        // 権限がブロックされている場合
-        displayPermissionDeniedPopup();
       }
     } catch (error) {
-      console.error("Notification bell click error:", error);
-      // エラーメッセージをより詳細に
-      if (error.message && error.message.includes('Service Worker')) {
-        showToast("Service Workerの登録に失敗しました。ページを再読み込みしてください。", "error");
-      } else {
-        showToast("通知設定でエラーが発生しました", "error");
-      }
+      console.error("PWA notification setup error:", error);
+      // エラーが発生した場合は、フラグをリセットして次回再試行できるようにする
+      localStorage.removeItem('pwa_notification_requested');
+      showToast("通知設定でエラーが発生しました。アプリを再起動してください。", "error");
     }
-  };
-
-  // 権限がブロックされている場合のポップアップ表示
-  const displayPermissionDeniedPopup = () => {
-    const infoDiv = document.createElement("div");
-    infoDiv.id = "notification-info-popup";
-    infoDiv.style.cssText = `position:fixed;top:60px;right:20px;background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:300px;z-index:1000;`;
-    infoDiv.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h3 style="margin:0;font-size:16px;">通知設定</h3>
-        <button id="close-notification-info" style="background:none;border:none;font-size:20px;cursor:pointer;color:#666;padding:0;width:24px;height:24px;">&times;</button>
-      </div>
-      <p style="margin:0 0 12px 0;font-size:14px;color:#666;">❌ 通知はブロックされています</p>
-      <div style="background:#f5f5f5;padding:12px;border-radius:8px;font-size:13px;">
-        <p style="margin:0 0 8px 0;font-weight:bold;">設定を変更する方法：</p>
-        <p style="margin:0 0 4px 0;">📱 <strong>スマホ（${isPWA ? 'アプリ' : 'ブラウザ'}）:</strong><br>設定 → ${isPWA ? 'アプリ' : 'ブラウザ'} → 通知</p>
-        <p style="margin:0;">💻 <strong>PC:</strong><br>アドレスバーの🔒 → 通知設定</p>
-      </div>`;
-
-    const existing = document.getElementById("notification-info-popup");
-    if (existing) existing.remove();
-    document.body.appendChild(infoDiv);
-    document.getElementById("close-notification-info").addEventListener("click", () => infoDiv.remove());
-    setTimeout(() => {
-      document.addEventListener("click", function closePopup(e) {
-        if (!infoDiv.contains(e.target) && !container.contains(e.target)) {
-          infoDiv.remove();
-          document.removeEventListener("click", closePopup);
-        }
-      });
-    }, 100);
-  };
-  
-  // 最初にボタンのHTMLを挿入
-  container.innerHTML = `<button type="button" aria-label="通知設定">${bellIcon}</button>`;
-  const button = container.querySelector("button");
-  if(button) {
-    button.addEventListener("click", handleBellClick);
-  }
-
-  // OneSignal SDKの準備ができてから、状態を更新
-  window.OneSignalDeferred.push(async function (OneSignal) {
-    // 初期状態を確認してボタンの見た目を更新（オプション）
-    try {
-      const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
-      if (isOptedIn && button) {
-        button.style.opacity = '1';
-      }
-    } catch (e) {
-      console.log("Could not check initial subscription state:", e);
-    }
-
-    // イベントリスナーを設定
-    OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
-      console.log("[OneSignal] Push subscription state changed:", state);
-      if (state.current.optedIn && !state.previous.optedIn) {
-        showToast("通知の登録が完了しました！", "success");
-        if (button) button.style.opacity = '1';
-      } else if (!state.current.optedIn && state.previous.optedIn) {
-        showToast("通知を解除しました。", "info");
-        if (button) button.style.opacity = '0.6';
-      }
-    });
   });
+}
+
+/**
+ * 8) 通知ボタンの初期化と処理（修正版）
+ */
+function initializeNotificationButton() {
+  // この関数は使用しないが、互換性のために残す
+  return;
+  // この関数は使用しないが、互換性のために残す
+  return;
 }
 
 // PWA判定
@@ -1080,3 +1015,8 @@ function initializeRankPage() {
 const srOnlyStyle = document.createElement('style');
 srOnlyStyle.textContent = `.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`;
 document.head.appendChild(srOnlyStyle);
+
+// ベルマークを非表示にする
+const hideNotificationButton = document.createElement('style');
+hideNotificationButton.textContent = `#notification-button-container { display: none !important; }`;
+document.head.appendChild(hideNotificationButton);
