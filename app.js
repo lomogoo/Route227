@@ -17,8 +17,8 @@ window.OneSignalDeferred.push(function (OneSignal) {
   OneSignal.init({
     appId: "8e1dc10e-1525-4db3-9036-dd99f1552711", // ← ご自身のアプリ ID に置換
     autoRegister: false,  // ベルクリックで opt‑in 制御
-    serviceWorkerPath: "/service-worker.js",
-    serviceWorkerRegistration: { scope: "/" },
+    serviceWorkerPath: "/Route227/service-worker.js", 
+    serviceWorkerRegistration: { scope: "/Route227/" }, // scopeも合わせる
     notifyButton: { enable: false }
   });
 
