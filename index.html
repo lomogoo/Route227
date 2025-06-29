@@ -272,19 +272,5 @@
 
   <!-- <script src="app.js"></script> -->
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // OneSignalの初期化で指定したパスとスコープと一致させる
-        navigator.serviceWorker.register('/Route227/service-worker.js', { scope: '/Route227/' })
-          .then(registration => {
-            console.log('Service Worker registered successfully with scope:', registration.scope);
-          })
-          .catch(error => {
-            console.error('Service Worker registration failed:', error);
-          });
-      });
-    }
-  </script>
 </body>
 </html>
