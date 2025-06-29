@@ -858,9 +858,8 @@ function handleUrlHash() {
   }
 }
 
-// app.js
+// app.js のこの関数を丸ごと置き換えてください
 
-// app.js
 function initializeNotificationButton() {
   const container = document.getElementById("notification-button-container");
   if (!container) return;
@@ -884,37 +883,36 @@ function initializeNotificationButton() {
 
           if (result === "granted") {
             showToast("通知が有効になりました！", "success");
-            if (window.OneSignal && window.OneSignal.User) {
+            
+            //【iOS対策】許可直後に少し待ってから登録処理を実行
+            setTimeout(async () => {
               try {
-                await OneSignal.User.PushSubscription.optIn();
-                console.log("OneSignal subscription successful");
+                if (window.OneSignal && window.OneSignal.User) {
+                  await OneSignal.User.PushSubscription.optIn();
+                  console.log("[OneSignal] optIn successful after delay");
+                }
               } catch (e) {
-                console.error("optIn error:", e);
+                 console.error("[OneSignal] optIn after delay failed:", e);
+                 showToast("通知の登録に失敗しました。", "error");
               }
-            }
-            /* テスト通知 */
-            new Notification("Route227", {
-              body: "通知が正常に有効化されました",
-              icon: "./assets/icon-192.png",
-            });
-          }
-          setTimeout(() => updateButton(Notification.permission), 500);
-        } else {
-          /* ------- 権限が granted / denied ------- */
-          if (
-            currentNativePermission === "granted" &&
-            window.OneSignal &&
-            !(await OneSignal.User.PushSubscription.optedIn)
-          ) {
-            try {
-              await OneSignal.User.PushSubscription.optIn();
-              console.log("OneSignal subscribed after granted");
-            } catch (e) {
-              console.error("optIn error:", e);
-            }
-          }
+            }, 500); // 0.5秒待つ
 
-          /* ポップアップの生成 */
+          } else {
+             showToast("通知が許可されませんでした。", "warning");
+          }
+          // ボタンの状態を即時更新
+          setTimeout(() => updateButton(Notification.permission), 500);
+
+        } else if (currentNativePermission === "granted") {
+            //【Android/PC対策】既に許可済みの場合も、クリックをトリガーに登録
+            showToast("通知を登録しています…", "info");
+            if (window.OneSignal && window.OneSignal.User) {
+              await OneSignal.User.PushSubscription.optIn();
+              console.log("[OneSignal] optIn successful on click for already-granted permission.");
+            }
+
+        } else { // 'denied' の場合
+          /* ------- 権限がブロックされている場合 → 設定方法のポップアップを表示 ------- */
           const infoDiv = document.createElement("div");
           infoDiv.id = "notification-info-popup";
           infoDiv.style.cssText = `position:fixed;top:60px;right:20px;background:white;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:300px;z-index:1000;`;
@@ -923,12 +921,10 @@ function initializeNotificationButton() {
               <h3 style="margin:0;font-size:16px;">通知設定</h3>
               <button id="close-notification-info" style="background:none;border:none;font-size:20px;cursor:pointer;color:#666;padding:0;width:24px;height:24px;">&times;</button>
             </div>
-            <p style="margin:0 0 12px 0;font-size:14px;color:#666;">${
-              currentNativePermission === "granted" ? "✅ 通知は有効です" : "❌ 通知はブロックされています"
-            }</p>
+            <p style="margin:0 0 12px 0;font-size:14px;color:#666;">❌ 通知はブロックされています</p>
             <div style="background:#f5f5f5;padding:12px;border-radius:8px;font-size:13px;">
               <p style="margin:0 0 8px 0;font-weight:bold;">設定を変更する方法：</p>
-              <p style="margin:0 0 4px 0;">📱 <strong>スマホ:</strong><br>設定 → Safari/Chrome → 通知</p>
+              <p style="margin:0 0 4px 0;">📱 <strong>スマホ:</strong><br>設定 → ブラウザアプリ → 通知</p>
               <p style="margin:0;">💻 <strong>PC:</strong><br>アドレスバーの🔒 → 通知設定</p>
             </div>`;
 
@@ -956,24 +952,20 @@ function initializeNotificationButton() {
   };
 
   /* -------- SDK 準備完了時に実行 -------- */
-  if (window.OneSignalDeferred) {
-    window.OneSignalDeferred.push(async function (OneSignal) {
-      if (Notification.permission === "granted") {
-        try {
-          const isPushEnabled = await OneSignal.User.PushSubscription.optedIn;
-          if (!isPushEnabled) {
-            await OneSignal.User.PushSubscription.optIn();
-            console.log("OneSignal auto-subscribed on init");
-          }
-        } catch (e) {
-          console.log("OneSignal init:", e);
-        }
-      }
-      updateButton(Notification.permission);
-    });
-  } else {
+  window.OneSignalDeferred.push(function (OneSignal) {
+    // 【Android/PC対策】ページ読み込み時の自動登録処理を削除。
+    // ボタンの初期状態を更新するだけにする。
     updateButton(Notification.permission);
-  }
+    
+    // OneSignalのSubscription状態が変わった際のデバッグログは残しておく
+    OneSignal.User.PushSubscription.addEventListener("change", async (state) => {
+      console.log("[OneSignal] Push state →", state);
+      if (state.current.optedIn) {
+        showToast("通知が有効になりました！", "success");
+        console.log("[OneSignal] User ID:", await OneSignal.User.getOnesignalId());
+      }
+    });
+  });
 }
 
 // PWA判定
