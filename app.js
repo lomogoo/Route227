@@ -249,7 +249,6 @@ async function handleLogin() {
 
         closeModal(document.getElementById('login-modal'));
         showToast('ログインしました', 'success');
-        await migrateUserStamps(data.user.id);
 
     } catch (err) {
         if (messageEl) messageEl.textContent = 'メールアドレスまたはパスワードが正しくありません。';
@@ -260,7 +259,7 @@ async function handleLogin() {
     }
 }
 
-// 新規登録処理
+// 新規登録処理 (修正後)
 async function handleSignup() {
     const emailInput = document.getElementById('signup-email');
     const passwordInput = document.getElementById('signup-password');
@@ -273,12 +272,14 @@ async function handleSignup() {
     const passwordConfirm = passwordConfirmInput.value;
 
     if (messageEl) messageEl.textContent = '';
-
+    if (!email) {
+        if(messageEl) messageEl.textContent = 'メールアドレスを入力してください。';
+        return;
+    }
     if (password !== passwordConfirm) {
         if (messageEl) messageEl.textContent = 'パスワードが一致しません。';
         return;
     }
-    
     if (!validatePassword(password)) {
         if (messageEl) messageEl.textContent = 'パスワードが要件を満たしていません。';
         return;
@@ -288,63 +289,72 @@ async function handleSignup() {
     button.textContent = '処理中…';
 
     try {
-        const { data, error } = await db.auth.signUp({
+        // 1. Supabase Authにユーザーを登録
+        const { data: authData, error: authError } = await db.auth.signUp({
             email: email,
             password: password,
         });
 
-        if (error) throw error;
+        if (authError) throw authError;
 
-        closeModal(document.getElementById('login-modal'));
-        showToast('新規登録が完了しました', 'success');
-        await migrateUserStamps(data.user.id);
+        // 2. ユーザープロフィールを作成
+        await createUserProfile(authData.user.id, email);
+        
+        showToast('登録が完了しました。ログインしてください。', 'success');
+        switchAuthStep('login-view'); // ログイン画面に切り替え
 
     } catch (err) {
-        if (messageEl) messageEl.textContent = 'このメールアドレスは既に使用されています。';
+        if (messageEl) messageEl.textContent = '登録中にエラーが発生しました。時間を置いて再度お試しください。';
         console.error('Signup error:', err);
     } finally {
         button.disabled = false;
-        button.textContent = '登録してログイン';
+        button.textContent = '登録する';
     }
 }
 
-async function migrateUserStamps(userId) {
+// ユーザープロフィール作成 (修正後)
+async function createUserProfile(userId, email) {
     try {
-        // まず現在のユーザーデータを確認
-        const { data: existingUser, error: fetchError } = await db
+        // 1. legacy_stampsテーブルからスタンプ数を取得
+        const { data: legacyData, error: legacyError } = await db
+            .from('legacy_stamps')
+            .select('stamp_count')
+            .eq('email', email)
+            .single(); // single()は、結果が1行でない場合にエラーを返す
+
+        // 既存ユーザーの場合、エラーはnullになる
+        if (legacyError && legacyError.code !== 'PGRST116') { // PGRST116は行が見つからないエラー
+            throw legacyError;
+        }
+
+        const initialStamps = legacyData ? legacyData.stamp_count : 0;
+        
+        if (legacyData) {
+            console.log(`既存ユーザー: ${email} のスタンプ数 ${initialStamps} を引き継ぎます。`);
+        }
+
+        // 2. usersテーブルにプロフィールを作成
+        const { error: insertError } = await db
             .from('users')
-            .select('*')
-            .eq('supabase_uid', userId)
-            .maybeSingle();
+            .insert({
+                supabase_uid: userId,
+                stamp_count: initialStamps,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
 
-        if (fetchError) {
-            console.error('Error fetching user:', fetchError);
-            return;
-        }
+        if (insertError) throw insertError;
 
-        if (!existingUser) {
-            // ユーザーデータが存在しない場合、新規作成
-            const { error: insertError } = await db
-                .from('users')
-                .insert({
-                    supabase_uid: userId,
-                    stamp_count: 0,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                });
-
-            if (insertError) {
-                console.error('Error creating user:', insertError);
-            }
-        }
-        // 既存ユーザーの場合はスタンプ数がそのまま保持される
     } catch (error) {
-        console.error('Migration error:', error);
+        console.error('ユーザープロフィールの作成に失敗しました:', error);
+        // ここでエラーが発生しても、Authへの登録は完了しているため、
+        // ユーザーにはログインを促すのが良いかもしれません。
+        showToast('プロフィールの作成に失敗しました。', 'error');
     }
 }
 
 async function handleForgotPassword() {
-    // authEmail 変数にログイン画面のメールアドレスが設定されていることを前提とする
+    authEmail = document.getElementById('login-email').value.trim();
     if(!authEmail) {
         alert("パスワードをリセットするメールアドレスを入力してください。");
         return;
@@ -382,27 +392,12 @@ function setupStaticEventListeners() {
     renderArticles(currentCategory, false);
   });
   
-  // 新しいログイン・新規登録ボタンのリスナー
+  // ログイン・新規登録ボタンのリスナー
   document.getElementById('login-button')?.addEventListener('click', handleLogin);
   document.getElementById('signup-button')?.addEventListener('click', handleSignup);
-
-  // ログイン/新規登録ビュー切り替えリスナー
-  document.getElementById('show-register-view')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    switchAuthStep('register-view');
-  });
-  document.getElementById('show-login-view')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    switchAuthStep('login-view');
-  });
-
+  
   document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    authEmail = document.getElementById('login-email').value.trim();
-    if(!authEmail){
-      alert('パスワードをリセットするために、まずログイン用のメールアドレスを入力してください。');
-      return;
-    }
     handleForgotPassword();
   });
   
@@ -417,8 +412,8 @@ function setupStaticEventListeners() {
       if (modal) {
           closeModal(modal);
           if(modal.id === 'login-modal') {
-              // 初期表示をログインビューに
-              switchAuthStep('login-view'); 
+              // 初期表示を登録ビューに
+              switchAuthStep('register-view'); 
               document.getElementById('login-email').value = '';
               document.getElementById('login-password').value = '';
               document.getElementById('signup-email').value = '';
@@ -440,8 +435,8 @@ function setupStaticEventListeners() {
       if (activeModal) {
         closeModal(activeModal);
         if(activeModal.id === 'login-modal') {
-          // 初期表示をログインビューに
-          switchAuthStep('login-view');
+          // 初期表示を登録ビューに
+          switchAuthStep('register-view');
           document.getElementById('login-email').value = '';
           document.getElementById('login-password').value = '';
           document.getElementById('signup-email').value = '';
@@ -528,7 +523,8 @@ function initializeFoodtruckPage() {
   if (!globalUID) {
     const loginModal = document.getElementById('login-modal');
     if(loginModal) {
-        switchAuthStep('login-view'); // ログインモーダルは初期状態(ログインビュー)に
+        // ログインモーダルは初期状態(新規登録ビュー)に
+        switchAuthStep('register-view'); 
         openModal(loginModal);
     }
     updateStampDisplay(0);
@@ -551,7 +547,8 @@ function initializeFoodtruckPage() {
 }
 
 
-/* 8) ヘルパー関数群 */
+/* 8) ヘルパー関数群 (変更なし) */
+// ... ここから先のコードは変更ありません ...
 function setupFoodtruckActionListeners() {
   const foodtruckSection = document.getElementById('foodtruck-section');
   if (!foodtruckSection || foodtruckSection.dataset.listenersAttached === 'true') {
