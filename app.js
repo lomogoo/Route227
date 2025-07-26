@@ -387,6 +387,13 @@ function setupStaticEventListeners() {
               switchAuthStep('email-step');
               document.getElementById('auth-email').value = '';
               document.getElementById('auth-password').value = '';
+              document.getElementById('register-password').value = '';
+              document.getElementById('register-password-confirm').value = '';
+              document.getElementById('unified-password').value = '';
+              // パスワードポリシーの表示をリセット
+              document.querySelectorAll('.password-policy li').forEach(li => {
+                  li.classList.remove('valid');
+              });
           }
       }
     }
@@ -401,6 +408,13 @@ function setupStaticEventListeners() {
           switchAuthStep('email-step');
           document.getElementById('auth-email').value = '';
           document.getElementById('auth-password').value = '';
+          document.getElementById('register-password').value = '';
+          document.getElementById('register-password-confirm').value = '';
+          document.getElementById('unified-password').value = '';
+          // パスワードポリシーの表示をリセット
+          document.querySelectorAll('.password-policy li').forEach(li => {
+              li.classList.remove('valid');
+          });
         }
       }
     }
