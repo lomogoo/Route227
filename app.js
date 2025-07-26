@@ -194,7 +194,6 @@ function switchAuthStep(stepId) {
     });
     document.getElementById(stepId)?.classList.remove('hidden');
 
-    // タイトルとメッセージを動的に設定
     const titleEl = document.getElementById('auth-modal-title');
     const emailStepMessageEl = document.getElementById('email-step-message');
     if (stepId === 'auth-initial-step') {
@@ -219,7 +218,6 @@ function validatePassword(password) {
     return Object.values(policies).every(Boolean);
 }
 
-// ログイン処理
 async function handleLogin() {
     const passwordInput = document.getElementById('login-password');
     const messageEl = document.getElementById('login-form-message');
@@ -237,7 +235,7 @@ async function handleLogin() {
 
     try {
         const { data, error } = await db.auth.signInWithPassword({
-            email: authEmail, // グローバル変数から取得
+            email: authEmail,
             password: password,
         });
         if (error) throw error;
@@ -252,7 +250,6 @@ async function handleLogin() {
     }
 }
 
-// 新規登録処理
 async function handleSignup() {
     const passwordInput = document.getElementById('signup-password');
     const passwordConfirmInput = document.getElementById('signup-password-confirm');
@@ -276,17 +273,19 @@ async function handleSignup() {
     button.textContent = '処理中…';
 
     try {
-        const { data: authData, error: authError } = await db.auth.signUp({
-            email: authEmail, // グローバル変数から取得
+        // データベーストリガーがプロフィール作成を処理するため、
+        // ここではsignUpを呼び出すだけ。
+        const { data, error } = await db.auth.signUp({
+            email: authEmail,
             password: password,
         });
-        if (authError) throw authError;
-
-        await createUserProfile(authData.user.id, authEmail);
+        if (error) throw error;
         
         closeModal(document.getElementById('login-modal'));
-        // signUpの成功後に自動でログインされるため、その旨を伝える
-        showToast('登録が完了し、ログインしました。', 'success');
+        // Supabaseのデフォルト設定(Confirm email: on)の場合、
+        // 確認メールが送信される。その旨をユーザーに伝える。
+        alert('登録確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。');
+        
     } catch (err) {
         if (err.message && err.message.includes('User already registered')) {
             if (messageEl) messageEl.textContent = 'このメールアドレスは既に使用されています。ログインしてください。';
@@ -300,59 +299,12 @@ async function handleSignup() {
     }
 }
 
-// ユーザープロフィール作成 (修正版)
-async function createUserProfile(userId, email) {
-    try {
-        // 1. legacy_stampsテーブルからスタンプ数を取得
-        // .single() から .maybeSingle() に変更
-        const { data: legacyData, error: legacyError } = await db
-            .from('legacy_stamps')
-            .select('stamp_count')
-            .eq('email', email)
-            .maybeSingle(); 
-
-        // maybeSingle()を使った場合、行が見つからないことはエラーではないため、
-        // それ以外のエラーが発生した場合のみ処理を中断する
-        if (legacyError) throw legacyError;
-
-        // legacyDataが存在すればそのスタンプ数を、存在しなければ0を設定
-        const initialStamps = legacyData ? legacyData.stamp_count : 0;
-        
-        if (legacyData) {
-            console.log(`既存ユーザー: ${email} のスタンプ数 ${initialStamps} を引き継ぎます。`);
-        } else {
-            console.log(`新規ユーザー: ${email} のスタンプ数は0から開始します。`);
-        }
-
-        // 2. usersテーブルにプロフィールを作成
-        const { error: insertError } = await db
-            .from('users')
-            .insert({
-                supabase_uid: userId,
-                stamp_count: initialStamps,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            });
-
-        if (insertError) throw insertError;
-
-    } catch (error) {
-        console.error('ユーザープロフィールの作成に失敗しました:', error);
-        showToast('プロフィールの作成に失敗しました。', 'error');
-    }
-}
-
-
 async function handleForgotPassword() {
-    // この関数は email-step がなくなったため、呼び出し元でauthEmailを設定する必要がある
     if(!authEmail) {
         alert("パスワードをリセットするメールアドレスをパスワード入力画面で確認してください。");
         return;
     }
-    const messageStepText = document.getElementById('message-text');
-    messageStepText.textContent = 'パスワード再設定用のメールを送信しています...';
-    // ここでmessage-stepを表示するなどのUI変更が必要
-    alert('パスワード再設定メールを送信しました。'); // 仮実装
+    alert('パスワード再設定メールを送信しました。メールをご確認ください。');
     try {
         await db.auth.resetPasswordForEmail(authEmail, {
             redirectTo: window.location.href.split('#')[0]
@@ -380,7 +332,6 @@ function setupStaticEventListeners() {
         renderArticles(currentCategory, false);
     });
 
-    // --- 認証モーダルのイベントリスナー ---
     document.getElementById('start-login-btn')?.addEventListener('click', () => {
         authFlowState = 'login';
         switchAuthStep('auth-email-step');
@@ -394,7 +345,8 @@ function setupStaticEventListeners() {
     document.getElementById('email-next-btn')?.addEventListener('click', () => {
         const emailInput = document.getElementById('auth-email');
         const messageEl = document.getElementById('email-form-message');
-        authEmail = emailInput.value.trim();
+        // .toLowerCase() を追加して、大文字小文字を統一
+        authEmail = emailInput.value.trim().toLowerCase();
         if (!authEmail || !/\S+@\S+\.\S+/.test(authEmail)) {
             messageEl.textContent = '有効なメールアドレスを入力してください。';
             return;
@@ -422,18 +374,15 @@ function setupStaticEventListeners() {
     document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
     document.getElementById('signup-password')?.addEventListener('input', (e) => validatePassword(e.target.value));
 
-    // --- モーダルを閉じる共通リスナー ---
     document.body.addEventListener('click', (e) => {
         const modal = e.target.closest('.modal');
         if (e.target.matches('.close-modal') || e.target === modal) {
             if (modal) {
                 closeModal(modal);
                 if (modal.id === 'login-modal') {
-                    // モーダルを閉じたら必ず初期状態に戻す
                     switchAuthStep('auth-initial-step');
                     authEmail = '';
                     authFlowState = '';
-                    // 各フォームの入力とメッセージをリセット
                     document.getElementById('auth-email').value = '';
                     document.getElementById('login-password').value = '';
                     document.getElementById('signup-password').value = '';
@@ -481,7 +430,6 @@ async function showSection(sectionId, isInitialLoad = false) {
   }
 }
 
-// 修正: 未ログイン時に「ログイン」ボタンを表示
 function updateUserStatus(session) {
   const userStatusDiv = document.getElementById('user-status');
   if (!userStatusDiv) return;
