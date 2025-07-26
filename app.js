@@ -204,6 +204,20 @@ function switchAuthStep(stepId) {
     }
 }
 
+async function checkUserExists(email) {
+    try {
+        const { data, error } = await db.rpc('user_exists', { p_email: email });
+        if (error) {
+            console.error('ユーザー存在確認エラー:', error);
+            return false;
+        }
+        return data;
+    } catch (err) {
+        console.error('RPC呼び出し失敗:', err);
+        return false;
+    }
+}
+
 function validatePassword(password) {
     const policies = {
         length: password.length >= 8,
@@ -273,8 +287,6 @@ async function handleSignup() {
     button.textContent = '処理中…';
 
     try {
-        // データベーストリガーがプロフィール作成を処理するため、
-        // ここではsignUpを呼び出すだけ。
         const { data, error } = await db.auth.signUp({
             email: authEmail,
             password: password,
@@ -282,9 +294,7 @@ async function handleSignup() {
         if (error) throw error;
         
         closeModal(document.getElementById('login-modal'));
-        // Supabaseのデフォルト設定(Confirm email: on)の場合、
-        // 確認メールが送信される。その旨をユーザーに伝える。
-        alert('登録確認メールを送信しました。メール内のリンクをクリックして登録を完了してください。');
+        showToast('登録が完了し、ログインしました。', 'success');
         
     } catch (err) {
         if (err.message && err.message.includes('User already registered')) {
@@ -342,23 +352,45 @@ function setupStaticEventListeners() {
         switchAuthStep('auth-email-step');
     });
 
-    document.getElementById('email-next-btn')?.addEventListener('click', () => {
+    document.getElementById('email-next-btn')?.addEventListener('click', async () => {
         const emailInput = document.getElementById('auth-email');
         const messageEl = document.getElementById('email-form-message');
-        // .toLowerCase() を追加して、大文字小文字を統一
+        const nextButton = document.getElementById('email-next-btn');
+        
         authEmail = emailInput.value.trim().toLowerCase();
         if (!authEmail || !/\S+@\S+\.\S+/.test(authEmail)) {
             messageEl.textContent = '有効なメールアドレスを入力してください。';
             return;
         }
         messageEl.textContent = '';
-        
-        if (authFlowState === 'login') {
-            document.getElementById('login-email-display').textContent = authEmail;
-            switchAuthStep('auth-login-password-step');
-        } else {
-            document.getElementById('signup-email-display').textContent = authEmail;
-            switchAuthStep('auth-signup-password-step');
+
+        nextButton.disabled = true;
+        nextButton.textContent = '確認中…';
+
+        try {
+            const userExists = await checkUserExists(authEmail);
+
+            if (authFlowState === 'signup') {
+                if (userExists) {
+                    messageEl.textContent = 'このメールアドレスは登録済みです。ログインしてください。';
+                } else {
+                    document.getElementById('signup-email-display').textContent = authEmail;
+                    switchAuthStep('auth-signup-password-step');
+                }
+            } else { // authFlowState === 'login'
+                if (userExists) {
+                    document.getElementById('login-email-display').textContent = authEmail;
+                    switchAuthStep('auth-login-password-step');
+                } else {
+                    messageEl.textContent = 'このメールアドレスは登録されていません。新規登録してください。';
+                }
+            }
+        } catch (error) {
+            console.error('メールアドレス確認処理でエラー:', error);
+            messageEl.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+        } finally {
+            nextButton.disabled = false;
+            nextButton.textContent = '次へ';
         }
     });
     
