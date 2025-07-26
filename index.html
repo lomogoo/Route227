@@ -29,13 +29,6 @@
 
 <div id="toast-notification"></div>
   
-<div id="pwa-banner" class="pwa-banner hidden">
-  <div class="pwa-banner-content">
-    <img id="pwa-banner-image" src="assets/addhome.png" alt="PWAバナー">
-    <button id="pwa-banner-close">閉じる</button>
-  </div>
-</div>
-
   <div id="app-loader" class="app-loader active">
     <div class="loading-spinner"></div>
   </div>
@@ -49,6 +42,9 @@
         </div>
         
         <div class="header-actions">
+          <a href="https://www.instagram.com/route227/" target="_blank" rel="noopener noreferrer" class="header-icon-link" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
           <div id="user-status"></div>
         </div>
 
@@ -179,6 +175,18 @@
               </div>
             </div>
           </div>
+          
+          <div class="card history-card-container">
+            <div class="card-header">
+              <h2>交換履歴</h2>
+            </div>
+            <div class="card-body">
+              <ul class="history-list" id="history-list">
+                </ul>
+              <p id="history-empty-message" class="hidden" style="text-align: center; color: #6c757d;">まだ交換履歴はありません。</p>
+            </div>
+          </div>
+          
           <div class="card schedule-card-container">
             <div class="card-header">
               <h2>出店スケジュール</h2>
@@ -196,13 +204,6 @@
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     <span>フィード</span>
   </a>
-
-  <!--
-    <a href="#" class="nav-link" data-section="rank-section">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
-    <span>ランク</span>
-  </a>
-  -->
 
   <a href="#" class="nav-link" data-section="foodtruck-section">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stamp-icon lucide-stamp"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>
@@ -268,8 +269,5 @@
       </div>
     </div>
   </div>
-
-  <!-- <script src="app.js"></script> -->
-
 </body>
 </html>
