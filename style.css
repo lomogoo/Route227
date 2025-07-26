@@ -762,3 +762,21 @@ input[type="text"]:focus {
 #foodtruck-section .schedule-card-container {
   margin-bottom: 80px;
 }
+
+/* style.css に追記 */
+
+/* 18. Password Policy */
+.password-policy {
+  list-style: none;
+  font-size: 12px;
+  color: #6c757d;
+  margin: -8px 0 16px 4px;
+  padding: 0;
+}
+.password-policy li {
+  transition: color 0.3s ease;
+}
+.password-policy li.valid {
+  color: #2A9D8F;
+  text-decoration: line-through;
+}
