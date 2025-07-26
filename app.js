@@ -187,7 +187,7 @@ async function executeAction(action) {
 
 /* 5) 認証関連の関数 */
 function switchAuthStep(stepId) {
-    const steps = ['email-step', 'password-step', 'register-step', 'message-step', 'unified-auth-step'];
+    const steps = ['email-step', 'message-step', 'unified-auth-step'];
     steps.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
