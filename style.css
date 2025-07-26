@@ -7,13 +7,11 @@
   --color-bg: #F4F1DE;
   --color-primary: #E76F51;
   --color-primary-dark: #D76041;
-  --color-secondary: #F4A261;
   --color-accent: #E9C46A;
   --color-brand: #2A9D8F;
   --color-surface: #FFFFFF;
   --color-border: #E0E0E0;
 
-  --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
   --radius-md: 12px;
@@ -102,6 +100,23 @@ body {
   color: var(--color-text);
   padding: 6px 12px;
   font-size: 12px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header-icon-link {
+  color: var(--color-text);
+  transition: opacity 0.2s ease;
+  opacity: 0.8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-icon-link:hover {
+  opacity: 1;
 }
 
 /* 4. Footer Navigation */
@@ -346,7 +361,6 @@ input[type="text"]:focus {
   background-repeat: no-repeat;
 }
 
-/* スタンプ獲得アニメーション */
 @keyframes stamp-celebrate {
   0% { 
     transform: scale(0.5) rotate(0deg); 
@@ -361,7 +375,6 @@ input[type="text"]:focus {
   }
 }
 
-/* パーティクルエフェクト */
 .particle {
   position: fixed;
   width: 6px;
@@ -418,6 +431,47 @@ input[type="text"]:focus {
   height: auto;
   margin: 0 auto;
   border-radius: var(--radius-md);
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+.history-item:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+.history-info {
+  display: flex;
+  flex-direction: column;
+}
+.history-reward-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text);
+}
+.history-date {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+.history-points {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+.history-points span {
+  font-size: 12px;
+  font-family: var(--font-body);
+  margin-left: 2px;
 }
 
 /* 9. Modals */
@@ -563,7 +617,7 @@ input[type="text"]:focus {
   display: inline-flex;
 }
 
-/* 12. Two-Step Auth Styles */
+/* 12. Auth Form Styles */
 .form-message {
   margin-top: 12px;
   text-align: center;
@@ -600,91 +654,7 @@ input[type="text"]:focus {
   text-align: center;
 }
 
-/* 13. Header Notification Button Styles */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-#notification-button-container button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text);
-}
-
-#notification-button-container svg {
-  width: 24px;
-  height: 24px;
-}
-
-/* PWA起動時の下部メニュー */
-body.pwa .footer-nav {
-  height: 85px;
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* PWAバナー */
-.pwa-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  pointer-events: auto;
-}
-
-.pwa-banner-content {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  max-width: 90%;
-  width: 400px;
-  padding: 20px 20px 80px;
-  box-shadow: var(--shadow-md);
-  text-align: center;
-  position: relative;
-}
-
-.pwa-banner-content img {
-  width: 100%;
-  height: auto;
-  border-radius: var(--radius-md);
-}
-
-#pwa-banner-close {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 24px;
-  font-size: 16px;
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-#pwa-banner-close:hover {
-  background-color: var(--color-primary-dark);
-}
-
-.pwa-banner.hidden {
-  display: none !important;
-}
-
-/* 14. トースト通知 */
+/* 13. Toast Notification */
 #toast-notification {
   position: fixed;
   bottom: 80px;
@@ -707,7 +677,6 @@ body.pwa .footer-nav {
   opacity: 1;
 }
 
-/* トーストタイプ別スタイル */
 #toast-notification.toast-success {
   background-color: rgba(40, 167, 69, 0.9);
 }
@@ -725,20 +694,7 @@ body.pwa .footer-nav {
   background-color: rgba(0, 123, 255, 0.9);
 }
 
-/* 15. エラー状態 */
-.status {
-  padding: 20px;
-  text-align: center;
-  border-radius: var(--radius-md);
-}
-
-.status--error {
-  background-color: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-}
-
-/* 16. レスポンシブ対応 */
+/* 14. Responsive & Accessibility */
 @media (max-width: 380px) {
   .stamp-grid {
     gap: 12px;
@@ -757,7 +713,6 @@ body.pwa .footer-nav {
   }
 }
 
-/* 17. アクセシビリティ改善 */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -766,12 +721,7 @@ body.pwa .footer-nav {
   }
 }
 
-/* 18. ダークモード対応（将来の実装用） */
-@media (prefers-color-scheme: dark) {
-  /* ダークモード用のスタイルを後で追加可能 */
-}
-
-/* 19. スクロールバーのカスタマイズ */
+/* 15. Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -790,7 +740,7 @@ body.pwa .footer-nav {
   background: #aaa;
 }
 
-/* 20. 印刷時のスタイル */
+/* 16. Print Styles */
 @media print {
   .footer-nav,
   .app-header,
@@ -808,117 +758,7 @@ body.pwa .footer-nav {
   }
 }
 
-/* 21. フッター余白の調整 */
+/* 17. Misc */
 #foodtruck-section .schedule-card-container {
   margin-bottom: 80px;
-}
-
-/* 22. ローディング状態の改善 */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-.loading-skeleton {
-  background: linear-gradient(
-    to right,
-    #f0f0f0 0%,
-    #e0e0e0 20%,
-    #f0f0f0 40%,
-    #f0f0f0 100%
-  );
-  background-size: 1000px 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* style.css */
-
-/* 13. Header Notification Button Styles を拡張 */
-
-#notification-button-container button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-text);
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-#notification-button-container button:hover {
-  opacity: 1;
-}
-
-#notification-button-container svg {
-  width: 24px;
-  height: 24px;
-}
-
-/* style.css に追記 */
-
-/* 23. ヘッダーアイコン */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.header-icon-link {
-  color: var(--color-text);
-  transition: opacity 0.2s ease;
-  opacity: 0.8;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.header-icon-link:hover {
-  opacity: 1;
-}
-
-/* 24. 交換履歴 */
-.history-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 0;
-}
-.history-item:not(:last-child) {
-  border-bottom: 1px solid var(--color-border);
-}
-.history-info {
-  display: flex;
-  flex-direction: column;
-}
-.history-reward-name {
-  font-weight: 700;
-  font-size: 16px;
-  color: var(--color-text);
-}
-.history-date {
-  font-size: 12px;
-  color: #6c757d;
-  margin-top: 2px;
-}
-.history-points {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--color-primary);
-  white-space: nowrap;
-}
-.history-points span {
-  font-size: 12px;
-  font-family: var(--font-body);
-  margin-left: 2px;
 }
