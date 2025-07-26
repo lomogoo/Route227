@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">　
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -211,71 +211,102 @@
   </a>
 </footer>
 
+    <!-- QRコードスキャナ用モーダル -->
     <div class="modal" id="qr-modal">
       <div class="modal-content">
         <div class="modal-header"><h3>QRコードをスキャン</h3><button class="close-modal">&times;</button></div>
         <div class="modal-body"><div id="qr-reader"></div></div>
       </div>
     </div>
-    <div class="modal" id="notification-modal">
-      <div class="modal-content">
-        <div class="modal-header"><h3 id="notification-title"></h3><button class="close-modal">&times;</button></div>
-        <div class="modal-body"><p id="notification-message"></p><button class="btn btn-primary close-notification">OK</button></div>
-      </div>
-    </div>
-<div class="modal" id="login-modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h3 id="auth-modal-title">ようこそ</h3>
-      <button class="close-modal" aria-label="閉じる">&times;</button>
-    </div>
-    <div class="modal-body">
 
-      <div id="auth-initial-step">
-        <p>ログインまたはアカウントを新規登録します。</p>
-        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-          <button id="start-login-btn" class="btn btn-primary btn-full">ログイン</button>
-          <button id="start-signup-btn" class="btn btn-secondary btn-full">新規登録</button>
+    <!-- 通知用モーダル (デザイン刷新) -->
+    <div class="modal" id="notification-modal">
+      <div class="modal-content notification-content">
+        <button class="close-modal top-right-close">&times;</button>
+        <div class="modal-body">
+            <div id="notification-icon" class="notification-icon"></div>
+            <h3 id="notification-title" class="notification-title"></h3>
+            <p id="notification-message" class="notification-message"></p>
+            <button class="btn btn-primary btn-full modal-ok-btn">OK</button>
         </div>
       </div>
-
-      <div id="auth-email-step" class="hidden">
-        <button class="btn-link auth-back-btn" data-target="auth-initial-step">← 戻る</button>
-        <p id="email-step-message" style="margin-top: 12px;"></p>
-        <input type="email" id="auth-email" placeholder="メールアドレス" required autocomplete="email" />
-        <button id="email-next-btn" class="btn btn-primary btn-full">次へ</button>
-        <p id="email-form-message" class="form-message"></p>
-      </div>
-      
-      <div id="auth-login-password-step" class="hidden">
-        <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
-        <p style="margin-top: 12px;">パスワードを入力してください。</p>
-        <p><strong id="login-email-display"></strong></p>
-        <input type="password" id="login-password" placeholder="パスワード" required autocomplete="current-password" />
-        <p id="login-form-message" class="form-message"></p>
-        <button id="login-button" class="btn btn-primary btn-full">ログイン</button>
-        <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
-      </div>
-
-      <div id="auth-signup-password-step" class="hidden">
-        <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
-        <p style="margin-top: 12px;">パスワードを設定してください。</p>
-        <p><strong id="signup-email-display"></strong></p>
-        <input type="password" id="signup-password" placeholder="パスワード" required autocomplete="new-password" />
-        <input type="password" id="signup-password-confirm" placeholder="パスワード（確認用）" required autocomplete="new-password" />
-        <ul id="password-policy" class="password-policy">
-          <li id="policy-length">8文字以上</li>
-          <li id="policy-lowercase">小文字を含む</li>
-          <li id="policy-uppercase">大文字を含む</li>
-          <li id="policy-number">数字を含む</li>
-        </ul>
-        <p id="signup-form-message" class="form-message"></p>
-        <button id="signup-button" class="btn btn-primary btn-full">登録してログイン</button>
-      </div>
-      
     </div>
-  </div>
-</div>
+
+    <!-- 交換履歴詳細モーダル (新規追加) -->
+    <div class="modal" id="history-detail-modal">
+        <div class="modal-content history-detail-content">
+            <button class="close-modal top-right-close">&times;</button>
+            <div class="modal-body">
+                <div id="history-detail-icon" class="history-detail-icon"></div>
+                <h3 id="history-detail-title" class="history-detail-title"></h3>
+                <div class="history-detail-info">
+                    <p><strong>交換日:</strong> <span id="history-detail-date"></span></p>
+                    <p><strong>消費スタンプ:</strong> <span id="history-detail-points"></span>個</p>
+                </div>
+                <p class="history-detail-footer">ご利用ありがとうございます！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ログイン/新規登録モーダル (デザイン刷新) -->
+    <div class="modal" id="login-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="auth-modal-title">ようこそ</h3>
+          <button class="close-modal" aria-label="閉じる">&times;</button>
+        </div>
+        <div class="modal-body">
+    
+          <!-- ステップ1: 初期選択画面 -->
+          <div id="auth-initial-step">
+            <p>ログインまたはアカウントを新規登録します。</p>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+              <button id="start-login-btn" class="btn btn-primary btn-full">ログイン</button>
+              <button id="start-signup-btn" class="btn btn-secondary btn-full">新規登録</button>
+            </div>
+          </div>
+    
+          <!-- ステップ2: メールアドレス入力画面 (共有) -->
+          <div id="auth-email-step" class="hidden">
+            <p id="email-step-message" style="margin-top: 12px;"></p>
+            <input type="email" id="auth-email" placeholder="メールアドレス" required autocomplete="email" />
+            <button id="email-next-btn" class="btn btn-primary btn-full">次へ</button>
+            <p id="email-form-message" class="form-message"></p>
+            <button class="btn-link auth-back-btn" data-target="auth-initial-step">← 戻る</button>
+          </div>
+          
+          <!-- ステップ3: ログイン用パスワード入力 -->
+          <div id="auth-login-password-step" class="hidden">
+            <p style="margin-top: 12px;">パスワードを入力してください。</p>
+            <p><strong id="login-email-display"></strong></p>
+            <input type="password" id="login-password" class="auth-password-input" placeholder="パスワード" required autocomplete="current-password" />
+            <p id="login-form-message" class="form-message"></p>
+            <button id="login-button" class="btn btn-primary btn-full">ログイン</button>
+            <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
+            <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
+          </div>
+    
+          <!-- ステップ3: 新規登録用パスワード設定 -->
+          <div id="auth-signup-password-step" class="hidden">
+            <p style="margin-top: 12px;">パスワードを設定してください。</p>
+            <p><strong id="signup-email-display"></strong></p>
+            <input type="password" id="signup-password" class="auth-password-input" placeholder="パスワード" required autocomplete="new-password" />
+            <input type="password" id="signup-password-confirm" class="auth-password-input" placeholder="パスワード（確認用）" required autocomplete="new-password" />
+            <ul id="password-policy" class="password-policy">
+              <li id="policy-length">8文字以上</li>
+              <li id="policy-uppercase">大文字を含む</li>
+              <li id="policy-lowercase">小文字を含む</li>
+              <li id="policy-number">数字を含む</li>
+            </ul>
+            <p id="signup-form-message" class="form-message"></p>
+            <button id="signup-button" class="btn btn-primary btn-full">登録してログイン</button>
+            <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+
     <div class="modal" id="summary-modal">
       <div class="modal-content summary-modal-content">
         <button class="close-modal summary-close-btn">&times;</button>
