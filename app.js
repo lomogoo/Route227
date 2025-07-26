@@ -187,7 +187,7 @@ async function executeAction(action) {
 
 /* 5) 認証関連の関数 */
 function switchAuthStep(stepId) {
-    const steps = ['email-step', 'message-step', 'unified-auth-step'];
+    const steps = ['login-view', 'register-view', 'message-step'];
     steps.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -197,6 +197,13 @@ function switchAuthStep(stepId) {
             el.classList.add('hidden');
         }
     });
+
+    // email入力欄を同期させる
+    if (stepId === 'register-view') {
+        document.getElementById('signup-email').value = document.getElementById('login-email').value;
+    } else if (stepId === 'login-view') {
+        document.getElementById('login-email').value = document.getElementById('signup-email').value;
+    }
 }
 
 function validatePassword(password) {
@@ -213,40 +220,19 @@ function validatePassword(password) {
     return Object.values(policies).every(Boolean);
 }
 
-async function handleEmailNext() {
-    const emailInput = document.getElementById('auth-email');
-    const messageEl = document.getElementById('email-step-message');
+// ログイン処理
+async function handleLogin() {
+    const emailInput = document.getElementById('login-email');
+    const passwordInput = document.getElementById('login-password');
+    const messageEl = document.getElementById('login-message');
+    const button = document.getElementById('login-button');
     
-    authEmail = emailInput.value.trim();
-    if (messageEl) messageEl.textContent = '';
-    
-    if (!authEmail) {
-        if (messageEl) messageEl.textContent = 'メールアドレスを入力してください。';
-        return;
-    }
-
-    // メールアドレスの基本的な形式チェック
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(authEmail)) {
-        if (messageEl) messageEl.textContent = '有効なメールアドレスを入力してください。';
-        return;
-    }
-
-    // 統合認証画面へ
-    document.getElementById('unified-email-display').textContent = authEmail;
-    switchAuthStep('unified-auth-step');
-}
-
-async function handleUnifiedLogin() {
-    const passwordInput = document.getElementById('unified-password');
-    const messageEl = document.getElementById('unified-auth-message');
-    const button = document.getElementById('unified-login-btn');
+    const email = emailInput.value.trim();
     const password = passwordInput.value;
     
     if (messageEl) messageEl.textContent = '';
-
-    if (!password) {
-        if (messageEl) messageEl.textContent = 'パスワードを入力してください。';
+    if (!email || !password) {
+        if (messageEl) messageEl.textContent = 'メールアドレスとパスワードを入力してください。';
         return;
     }
 
@@ -254,51 +240,71 @@ async function handleUnifiedLogin() {
     button.textContent = '処理中…';
 
     try {
-        // まずログインを試みる
-        const { data: loginData, error: loginError } = await db.auth.signInWithPassword({
-            email: authEmail,
+        const { data, error } = await db.auth.signInWithPassword({
+            email: email,
             password: password,
         });
 
-        if (!loginError) {
-            // ログイン成功
-            closeModal(document.getElementById('login-modal'));
-            showToast('ログインしました', 'success');
-            
-            // 既存ユーザーのスタンプ数を確認・移行
-            await migrateUserStamps(loginData.user.id);
-        } else {
-            // ログイン失敗 - 新規登録を試みる
-            if (!validatePassword(password)) {
-                if (messageEl) messageEl.textContent = 'パスワードが要件を満たしていません。';
-                button.disabled = false;
-                button.textContent = 'ログイン / 新規登録';
-                return;
-            }
+        if (error) throw error;
 
-            const { data: signupData, error: signupError } = await db.auth.signUp({
-                email: authEmail,
-                password: password,
-            });
+        closeModal(document.getElementById('login-modal'));
+        showToast('ログインしました', 'success');
+        await migrateUserStamps(data.user.id);
 
-            if (!signupError) {
-                // 新規登録成功
-                closeModal(document.getElementById('login-modal'));
-                showToast('新規登録が完了しました', 'success');
-                
-                // 新規ユーザーでも既存データがあるか確認
-                await migrateUserStamps(signupData.user.id);
-            } else {
-                // 新規登録も失敗 = 既存ユーザーのパスワード間違い
-                if (messageEl) messageEl.textContent = 'パスワードが正しくありません。';
-            }
-        }
     } catch (err) {
-        if (messageEl) messageEl.textContent = '処理中にエラーが発生しました。';
-        console.error('Auth error:', err);
+        if (messageEl) messageEl.textContent = 'メールアドレスまたはパスワードが正しくありません。';
+        console.error('Login error:', err);
     } finally {
         button.disabled = false;
-        button.textContent = 'ログイン / 新規登録';
+        button.textContent = 'ログイン';
+    }
+}
+
+// 新規登録処理
+async function handleSignup() {
+    const emailInput = document.getElementById('signup-email');
+    const passwordInput = document.getElementById('signup-password');
+    const passwordConfirmInput = document.getElementById('signup-password-confirm');
+    const messageEl = document.getElementById('register-message');
+    const button = document.getElementById('signup-button');
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const passwordConfirm = passwordConfirmInput.value;
+
+    if (messageEl) messageEl.textContent = '';
+
+    if (password !== passwordConfirm) {
+        if (messageEl) messageEl.textContent = 'パスワードが一致しません。';
+        return;
+    }
+    
+    if (!validatePassword(password)) {
+        if (messageEl) messageEl.textContent = 'パスワードが要件を満たしていません。';
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = '処理中…';
+
+    try {
+        const { data, error } = await db.auth.signUp({
+            email: email,
+            password: password,
+        });
+
+        if (error) throw error;
+
+        closeModal(document.getElementById('login-modal'));
+        showToast('新規登録が完了しました', 'success');
+        await migrateUserStamps(data.user.id);
+
+    } catch (err) {
+        if (messageEl) messageEl.textContent = 'このメールアドレスは既に使用されています。';
+        console.error('Signup error:', err);
+    } finally {
+        button.disabled = false;
+        button.textContent = '登録してログイン';
     }
 }
 
@@ -338,15 +344,21 @@ async function migrateUserStamps(userId) {
 }
 
 async function handleForgotPassword() {
+    // authEmail 変数にログイン画面のメールアドレスが設定されていることを前提とする
+    if(!authEmail) {
+        alert("パスワードをリセットするメールアドレスを入力してください。");
+        return;
+    }
     const messageStepText = document.getElementById('message-text');
     
-    messageStepText.textContent = 'パスワード再設定用のメールを送信しました。メールをご確認ください。';
+    messageStepText.textContent = 'パスワード再設定用のメールを送信しています...';
     switchAuthStep('message-step');
 
     try {
         await db.auth.resetPasswordForEmail(authEmail, {
             redirectTo: window.location.href.split('#')[0]
         });
+        messageStepText.textContent = 'パスワード再設定用のメールを送信しました。メールをご確認ください。';
     } catch(err) {
         console.error('Forgot password error:', err);
         messageStepText.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
@@ -370,11 +382,32 @@ function setupStaticEventListeners() {
     renderArticles(currentCategory, false);
   });
   
-  document.getElementById('email-next-btn')?.addEventListener('click', handleEmailNext);
-  document.getElementById('unified-login-btn')?.addEventListener('click', handleUnifiedLogin);
-  document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
+  // 新しいログイン・新規登録ボタンのリスナー
+  document.getElementById('login-button')?.addEventListener('click', handleLogin);
+  document.getElementById('signup-button')?.addEventListener('click', handleSignup);
+
+  // ログイン/新規登録ビュー切り替えリスナー
+  document.getElementById('show-register-view')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchAuthStep('register-view');
+  });
+  document.getElementById('show-login-view')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchAuthStep('login-view');
+  });
+
+  document.getElementById('forgot-password-link')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    authEmail = document.getElementById('login-email').value.trim();
+    if(!authEmail){
+      alert('パスワードをリセットするために、まずログイン用のメールアドレスを入力してください。');
+      return;
+    }
+    handleForgotPassword();
+  });
   
-  document.getElementById('unified-password')?.addEventListener('input', (e) => {
+  // パスワード入力のバリデーション対象を新規登録フォームに限定
+  document.getElementById('signup-password')?.addEventListener('input', (e) => {
       validatePassword(e.target.value);
   });
 
@@ -384,16 +417,18 @@ function setupStaticEventListeners() {
       if (modal) {
           closeModal(modal);
           if(modal.id === 'login-modal') {
-              switchAuthStep('email-step');
-              document.getElementById('auth-email').value = '';
-              document.getElementById('auth-password').value = '';
-              document.getElementById('register-password').value = '';
-              document.getElementById('register-password-confirm').value = '';
-              document.getElementById('unified-password').value = '';
-              // パスワードポリシーの表示をリセット
+              // 初期表示をログインビューに
+              switchAuthStep('login-view'); 
+              document.getElementById('login-email').value = '';
+              document.getElementById('login-password').value = '';
+              document.getElementById('signup-email').value = '';
+              document.getElementById('signup-password').value = '';
+              document.getElementById('signup-password-confirm').value = '';
               document.querySelectorAll('.password-policy li').forEach(li => {
                   li.classList.remove('valid');
               });
+              document.getElementById('login-message').textContent = '';
+              document.getElementById('register-message').textContent = '';
           }
       }
     }
@@ -405,16 +440,18 @@ function setupStaticEventListeners() {
       if (activeModal) {
         closeModal(activeModal);
         if(activeModal.id === 'login-modal') {
-          switchAuthStep('email-step');
-          document.getElementById('auth-email').value = '';
-          document.getElementById('auth-password').value = '';
-          document.getElementById('register-password').value = '';
-          document.getElementById('register-password-confirm').value = '';
-          document.getElementById('unified-password').value = '';
-          // パスワードポリシーの表示をリセット
+          // 初期表示をログインビューに
+          switchAuthStep('login-view');
+          document.getElementById('login-email').value = '';
+          document.getElementById('login-password').value = '';
+          document.getElementById('signup-email').value = '';
+          document.getElementById('signup-password').value = '';
+          document.getElementById('signup-password-confirm').value = '';
           document.querySelectorAll('.password-policy li').forEach(li => {
               li.classList.remove('valid');
           });
+          document.getElementById('login-message').textContent = '';
+          document.getElementById('register-message').textContent = '';
         }
       }
     }
@@ -491,7 +528,7 @@ function initializeFoodtruckPage() {
   if (!globalUID) {
     const loginModal = document.getElementById('login-modal');
     if(loginModal) {
-        switchAuthStep('email-step'); // ログインモーダルは初期状態に
+        switchAuthStep('login-view'); // ログインモーダルは初期状態(ログインビュー)に
         openModal(loginModal);
     }
     updateStampDisplay(0);
