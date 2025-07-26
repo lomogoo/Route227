@@ -226,24 +226,41 @@
 <div class="modal" id="login-modal">
   <div class="modal-content">
     <div class="modal-header">
-      <h3 id="login-title">ログイン / 新規登録</h3>
-      <button class="close-modal">&times;</button>
+      <h3 id="auth-modal-title">ようこそ</h3>
+      <button class="close-modal" aria-label="閉じる">&times;</button>
     </div>
     <div class="modal-body">
 
-      <div id="login-view">
-        <p>メールアドレスとパスワードでログインしてください。</p>
-        <input type="email" id="login-email" placeholder="メールアドレス" required autocomplete="email" />
-        <input type="password" id="login-password" placeholder="パスワード" required autocomplete="current-password" />
-        <p id="login-message" class="form-message"></p>
-        <button id="login-button" class="btn btn-primary btn-full">ログイン</button>
-        <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
-        <p class="auth-note">アカウントをお持ちでないですか？ <a href="#" id="show-register-view" class="btn-link" style="display: inline; margin-top:0;">新規登録はこちら</a></p>
+      <div id="auth-initial-step">
+        <p>ログインまたはアカウントを新規登録します。</p>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+          <button id="start-login-btn" class="btn btn-primary btn-full">ログイン</button>
+          <button id="start-signup-btn" class="btn btn-secondary btn-full">新規登録</button>
+        </div>
       </div>
 
-      <div id="register-view" class="hidden">
-        <p>アカウントを新規作成します。パスワードを設定してください。</p>
-        <input type="email" id="signup-email" placeholder="メールアドレス" required autocomplete="email" />
+      <div id="auth-email-step" class="hidden">
+        <button class="btn-link auth-back-btn" data-target="auth-initial-step">← 戻る</button>
+        <p id="email-step-message" style="margin-top: 12px;"></p>
+        <input type="email" id="auth-email" placeholder="メールアドレス" required autocomplete="email" />
+        <button id="email-next-btn" class="btn btn-primary btn-full">次へ</button>
+        <p id="email-form-message" class="form-message"></p>
+      </div>
+      
+      <div id="auth-login-password-step" class="hidden">
+        <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
+        <p style="margin-top: 12px;">パスワードを入力してください。</p>
+        <p><strong id="login-email-display"></strong></p>
+        <input type="password" id="login-password" placeholder="パスワード" required autocomplete="current-password" />
+        <p id="login-form-message" class="form-message"></p>
+        <button id="login-button" class="btn btn-primary btn-full">ログイン</button>
+        <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
+      </div>
+
+      <div id="auth-signup-password-step" class="hidden">
+        <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
+        <p style="margin-top: 12px;">パスワードを設定してください。</p>
+        <p><strong id="signup-email-display"></strong></p>
         <input type="password" id="signup-password" placeholder="パスワード" required autocomplete="new-password" />
         <input type="password" id="signup-password-confirm" placeholder="パスワード（確認用）" required autocomplete="new-password" />
         <ul id="password-policy" class="password-policy">
@@ -252,16 +269,10 @@
           <li id="policy-uppercase">大文字を含む</li>
           <li id="policy-number">数字を含む</li>
         </ul>
-        <p id="register-message" class="form-message"></p>
+        <p id="signup-form-message" class="form-message"></p>
         <button id="signup-button" class="btn btn-primary btn-full">登録してログイン</button>
-        <p class="auth-note">すでにアカウントをお持ちですか？ <a href="#" id="show-login-view" class="btn-link" style="display: inline; margin-top:0;">ログインはこちら</a></p>
       </div>
-
-      <div id="message-step" class="hidden">
-          <p id="message-text"></p>
-          <button class="btn btn-primary btn-full close-modal">OK</button>
-      </div>
-
+      
     </div>
   </div>
 </div>
