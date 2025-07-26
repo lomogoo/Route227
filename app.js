@@ -317,9 +317,6 @@ function setupStaticEventListeners() {
       }
     }
   });
-
-  // ベルマークは非表示にする（PWAでは自動で通知設定するため）
-  // initializeNotificationButton();
 }
 
 async function showSection(sectionId, isInitialLoad = false) {
@@ -400,6 +397,7 @@ function initializeFoodtruckPage() {
   updateStampDisplay(0);
   updateRewardButtons(0);
   setupFoodtruckActionListeners();
+  displayRewardHistory();
 
   (async () => {
     try {
@@ -600,19 +598,30 @@ async function redeemReward(type) {
   try {
     const count = await fetchWithRetry(() => fetchUserRow(globalUID));
     const required = type === 'coffee' ? 3 : 6;
+    const rewardName = type === 'coffee' ? 'コーヒー1杯' : 'カレー1杯';
+    
     if (count < required) return;
 
-    if (!confirm(`${type === 'coffee' ? 'コーヒー' : 'カレー'}と交換しますか？\n（スタンプが${required}個消費されます）`)) {
+    if (!confirm(`${rewardName}と交換しますか？\n（スタンプが${required}個消費されます）`)) {
       return;
     }
 
     const newCount = await fetchWithRetry(() => updateStampCount(globalUID, count - required));
+    
+    await db.from('reward_history').insert({
+      user_id: globalUID,
+      reward_name: rewardName,
+      points_consumed: required
+    });
+    
     updateStampDisplay(newCount);
     updateRewardButtons(newCount);
-    showNotification('交換完了', `${type === 'coffee' ? 'コーヒー' : 'カレー'}と交換しました！<br>店舗でスタッフにお見せください。`);
+    displayRewardHistory(); // 履歴表示を更新
+    
+    showNotification('交換完了', `${rewardName}と交換しました！<br>店舗でスタッフにお見せください。`);
     showToast('特典を交換しました！', 'success');
 
-    announceToScreenReader(`${type === 'coffee' ? 'コーヒー' : 'カレー'}と交換しました。`);
+    announceToScreenReader(`${rewardName}と交換しました。`);
   } catch (error) {
     showNotification('エラー', '特典の交換に失敗しました。');
   }
@@ -823,120 +832,6 @@ function handleUrlHash() {
   }
 }
 
-/**
- * 8) PWA初回起動時の通知設定
- */
-async function checkAndRequestNotificationForPWA() {
-  // PWA判定
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                window.navigator.standalone === true;
-  
-  if (!isPWA) {
-    console.log("Not in PWA mode, skipping notification setup");
-    return;
-  }
-  
-  // 初回起動かチェック
-  const hasRequestedNotification = localStorage.getItem('pwa_notification_requested');
-  if (hasRequestedNotification === 'true') {
-    console.log("Notification already requested before");
-    return;
-  }
-  
-  // OneSignalの初期化を待つ
-  window.OneSignalDeferred.push(async function (OneSignal) {
-    try {
-      // 少し遅延を入れる（PWA起動直後は不安定な場合があるため）
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 初回起動フラグを設定（ダイアログ表示前に設定することで、エラーが起きても繰り返さない）
-      localStorage.setItem('pwa_notification_requested', 'true');
-      
-      // 現在の権限状態を確認
-      const currentPermission = await OneSignal.Notifications.permission;
-      console.log("PWA first launch. Current permission:", currentPermission);
-      
-      if (currentPermission === 'default') {
-        // 通知許可を求める
-        showToast("通知を設定しています...", "info");
-        const permission = await OneSignal.Notifications.requestPermission();
-        
-        if (permission === true) {
-          console.log("Permission granted, opting in...");
-          await OneSignal.User.PushSubscription.optIn();
-          showToast("🔔 通知の設定が完了しました！", "success");
-          
-          // ユーザーIDをログ出力（デバッグ用）
-          const userId = await OneSignal.User.getOneSignalId();
-          console.log("[OneSignal] User ID:", userId);
-        } else {
-          showToast("通知が許可されませんでした", "warning");
-        }
-      } else if (currentPermission === 'granted') {
-        // すでに権限がある場合は購読を確認
-        const isOptedIn = await OneSignal.User.PushSubscription.optedIn;
-        if (!isOptedIn) {
-          await OneSignal.User.PushSubscription.optIn();
-          showToast("🔔 通知の設定が完了しました！", "success");
-        }
-      }
-    } catch (error) {
-      console.error("PWA notification setup error:", error);
-      // エラーが発生した場合は、フラグをリセットして次回再試行できるようにする
-      localStorage.removeItem('pwa_notification_requested');
-      showToast("通知設定でエラーが発生しました。アプリを再起動してください。", "error");
-    }
-  });
-}
-
-/**
- * 8) 通知ボタンの初期化と処理（修正版）
- */
-
-/**
-
-function initializeNotificationButton() {
-  // この関数は使用しないが、互換性のために残す
-  return;
-  // この関数は使用しないが、互換性のために残す
-  return;
-}
- */
-
-// PWA判定
-window.addEventListener('DOMContentLoaded', () => {
-  const isPWA =
-    window.matchMedia('(display-mode: standalone)').matches ||
-    window.navigator.standalone === true;
-
-  if (isPWA) {
-    document.body.classList.add('pwa');
-  }
-});
-
-// PWAバナー
-window.addEventListener('DOMContentLoaded', () => {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
-  if (!isStandalone) {
-    const banner = document.getElementById('pwa-banner');
-    const closeBtn = document.getElementById('pwa-banner-close');
-    const bannerImage = document.getElementById('pwa-banner-image');
-
-    const isAndroid = /Android/i.test(navigator.userAgent);
-
-    if (isAndroid) {
-      bannerImage.src = 'assets/addhome2.png';
-    }
-
-    banner.classList.remove('hidden');
-
-    closeBtn.addEventListener('click', () => {
-      banner.classList.add('hidden');
-    });
-  }
-});
-
 // ページキャッシュからの復元時にリロード
 window.addEventListener('pageshow', function (event) {
   if (event.persisted) {
@@ -998,6 +893,49 @@ async function updateFoodtruckInfo() {
 // ランクページ初期化
 function initializeRankPage() {
   console.log('Rank page initialization placeholder');
+}
+
+async function displayRewardHistory() {
+  if (!globalUID) return;
+
+  const historyList = document.getElementById('history-list');
+  const emptyMessage = document.getElementById('history-empty-message');
+  if (!historyList || !emptyMessage) return;
+
+  try {
+    const { data, error } = await db
+      .from('reward_history')
+      .select('*')
+      .eq('user_id', globalUID)
+      .order('exchanged_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (data.length === 0) {
+      emptyMessage.classList.remove('hidden');
+      historyList.innerHTML = '';
+    } else {
+      emptyMessage.classList.add('hidden');
+      historyList.innerHTML = data.map(item => {
+        const date = new Date(item.exchanged_at);
+        const formattedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        return `
+          <li class="history-item">
+            <div class="history-info">
+              <span class="history-reward-name">${escapeHtml(item.reward_name)}</span>
+              <span class="history-date">${formattedDate}</span>
+            </div>
+            <div class="history-points">
+              -${item.points_consumed}<span>pt</span>
+            </div>
+          </li>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.error("履歴の取得エラー:", err);
+    showToast('交換履歴の取得に失敗しました', 'error');
+  }
 }
 
 // スクリーンリーダー用のスタイル
