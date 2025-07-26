@@ -11,6 +11,8 @@
   --color-brand: #2A9D8F;
   --color-surface: #FFFFFF;
   --color-border: #E0E0E0;
+  --color-success: #2a9d8f;
+  --color-info: #3a86ff;
 
   --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
@@ -214,7 +216,8 @@ body {
 }
 
 input[type="email"],
-input[type="text"] {
+input[type="text"],
+input[type="password"] {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--color-border);
@@ -224,8 +227,15 @@ input[type="text"] {
   transition: border-color 0.2s ease;
 }
 
+.auth-password-input {
+  font-size: 20px !important;
+  padding: 14px !important;
+  text-align: center;
+}
+
 input[type="email"]:focus,
-input[type="text"]:focus {
+input[type="text"]:focus,
+input[type="password"]:focus {
   border-color: var(--color-primary);
   outline: none;
 }
@@ -442,10 +452,18 @@ input[type="text"]:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 .history-item:not(:last-child) {
   border-bottom: 1px solid var(--color-border);
+}
+.history-item:hover {
+  background-color: #f8f9fa;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 .history-info {
   display: flex;
@@ -504,6 +522,7 @@ input[type="text"]:focus {
   transition: transform 0.3s ease;
   max-height: 90vh;
   overflow-y: auto;
+  position: relative;
 }
 .modal.active .modal-content { 
   transform: scale(1); 
@@ -524,6 +543,7 @@ input[type="text"]:focus {
   color: #6c757d; 
   padding: 4px;
   transition: color 0.2s ease;
+  line-height: 1;
 }
 .close-modal:hover { color: var(--color-text); }
 .modal-body { padding: 20px; }
@@ -532,6 +552,12 @@ input[type="text"]:focus {
   border: 1px solid var(--color-border); 
   border-radius: var(--radius-lg); 
   overflow: hidden; 
+}
+.top-right-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
 }
 
 /* 10. Summary Modal */
@@ -622,36 +648,43 @@ input[type="text"]:focus {
   margin-top: 12px;
   text-align: center;
   font-size: 12px;
-  height: 1.2em;
+  min-height: 1.2em;
   color: var(--color-primary);
 }
 .hidden {
   display: none !important;
 }
-#otp-email-display {
-  word-break: break-all;
-}
-#otp-code {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 20px;
-  text-align: center;
-  letter-spacing: 0.5em;
-  margin-bottom: 16px;
-}
-.btn-link {
-  display: block;
-  width: 100%;
-  background: none;
-  border: none;
-  color: #6c757d;
-  text-decoration: underline;
-  font-size: 12px;
-  cursor: pointer;
+.btn-link.auth-back-btn {
   margin-top: 16px;
-  text-align: center;
+}
+.password-policy {
+  list-style: none;
+  font-size: 12px;
+  color: #6c757d;
+  margin: 0 0 16px 4px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+.password-policy li {
+  transition: color 0.3s ease;
+  position: relative;
+  padding-left: 16px;
+}
+.password-policy li::before {
+  content: '○';
+  position: absolute;
+  left: 0;
+  transition: all 0.3s ease;
+}
+.password-policy li.valid {
+  color: var(--color-success);
+}
+.password-policy li.valid::before {
+  content: '✓';
+  color: var(--color-success);
+  transform: scale(1.1);
 }
 
 /* 13. Toast Notification */
@@ -672,47 +705,57 @@ input[type="text"]:focus {
   text-align: center;
   font-size: 14px;
 }
+#toast-notification.show { opacity: 1; }
+#toast-notification.toast-success { background-color: rgba(40, 167, 69, 0.9); }
+#toast-notification.toast-warning { background-color: rgba(255, 193, 7, 0.9); color: #000; }
+#toast-notification.toast-error { background-color: rgba(220, 53, 69, 0.9); }
+#toast-notification.toast-info { background-color: rgba(0, 123, 255, 0.9); }
 
-#toast-notification.show {
-  opacity: 1;
+/* 14. Stylish Notification & History Modals */
+.notification-content .modal-body,
+.history-detail-content .modal-body {
+    padding: 32px 24px;
+    text-align: center;
+}
+.notification-icon, .history-detail-icon {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 16px;
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.notification-title, .history-detail-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: var(--color-text);
+}
+.notification-message, .history-detail-info {
+    font-size: 15px;
+    color: #6c757d;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+.history-detail-info p {
+    margin: 4px 0;
+}
+.history-detail-footer {
+    font-size: 12px !important;
+    color: #adb5bd !important;
+    margin-top: 24px;
+    margin-bottom: 0 !important;
 }
 
-#toast-notification.toast-success {
-  background-color: rgba(40, 167, 69, 0.9);
-}
-
-#toast-notification.toast-warning {
-  background-color: rgba(255, 193, 7, 0.9);
-  color: #000;
-}
-
-#toast-notification.toast-error {
-  background-color: rgba(220, 53, 69, 0.9);
-}
-
-#toast-notification.toast-info {
-  background-color: rgba(0, 123, 255, 0.9);
-}
-
-/* 14. Responsive & Accessibility */
+/* 15. Responsive & Accessibility */
 @media (max-width: 380px) {
-  .stamp-grid {
-    gap: 12px;
-  }
-  
-  .stamp .stamp-number {
-    font-size: 20px;
-  }
-  
-  .category-tabs {
-    font-size: 14px;
-  }
-  
-  .category-tab {
-    padding: 6px 12px;
-  }
+  .stamp-grid { gap: 12px; }
+  .stamp .stamp-number { font-size: 20px; }
+  .category-tabs { font-size: 14px; }
+  .category-tab { padding: 6px 12px; }
 }
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -721,74 +764,9 @@ input[type="text"]:focus {
   }
 }
 
-/* 15. Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--color-bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
-}
-
-/* 16. Print Styles */
-@media print {
-  .footer-nav,
-  .app-header,
-  .btn,
-  .modal {
-    display: none !important;
-  }
-  
-  body {
-    padding-bottom: 0;
-  }
-  
-  .card {
-    break-inside: avoid;
-  }
-}
-
-/* 17. Misc */
-#foodtruck-section .schedule-card-container {
-  margin-bottom: 80px;
-}
-
-
-/* 18. Password Policy */
-.password-policy {
-  list-style: none;
-  font-size: 12px;
-  color: #6c757d;
-  margin: -8px 0 16px 4px;
-  padding: 0;
-}
-.password-policy li {
-  transition: color 0.3s ease;
-}
-.password-policy li.valid {
-  color: #2A9D8F;
-  text-decoration: line-through;
-}
-
-/* 19. Auth Note */
-.auth-note {
-  margin-top: 16px;
-  padding: 12px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  font-size: 12px;
-  color: #6c757d;
-}
-.auth-note p {
-  margin: 4px 0;
-}
+/* 16. Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--color-bg); }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #aaa; }
+```
