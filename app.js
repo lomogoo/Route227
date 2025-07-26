@@ -285,7 +285,8 @@ async function handleSignup() {
         await createUserProfile(authData.user.id, authEmail);
         
         closeModal(document.getElementById('login-modal'));
-        showToast('登録が完了しました。自動的にログインします。', 'success');
+        // signUpの成功後に自動でログインされるため、その旨を伝える
+        showToast('登録が完了し、ログインしました。', 'success');
     } catch (err) {
         if (err.message && err.message.includes('User already registered')) {
             if (messageEl) messageEl.textContent = 'このメールアドレスは既に使用されています。ログインしてください。';
@@ -299,20 +300,31 @@ async function handleSignup() {
     }
 }
 
-// ユーザープロフィール作成
+// ユーザープロフィール作成 (修正版)
 async function createUserProfile(userId, email) {
     try {
-        const { data: legacyData } = await db
+        // 1. legacy_stampsテーブルからスタンプ数を取得
+        // .single() から .maybeSingle() に変更
+        const { data: legacyData, error: legacyError } = await db
             .from('legacy_stamps')
             .select('stamp_count')
             .eq('email', email)
-            .single();
+            .maybeSingle(); 
 
+        // maybeSingle()を使った場合、行が見つからないことはエラーではないため、
+        // それ以外のエラーが発生した場合のみ処理を中断する
+        if (legacyError) throw legacyError;
+
+        // legacyDataが存在すればそのスタンプ数を、存在しなければ0を設定
         const initialStamps = legacyData ? legacyData.stamp_count : 0;
+        
         if (legacyData) {
             console.log(`既存ユーザー: ${email} のスタンプ数 ${initialStamps} を引き継ぎます。`);
+        } else {
+            console.log(`新規ユーザー: ${email} のスタンプ数は0から開始します。`);
         }
 
+        // 2. usersテーブルにプロフィールを作成
         const { error: insertError } = await db
             .from('users')
             .insert({
@@ -329,6 +341,7 @@ async function createUserProfile(userId, email) {
         showToast('プロフィールの作成に失敗しました。', 'error');
     }
 }
+
 
 async function handleForgotPassword() {
     // この関数は email-step がなくなったため、呼び出し元でauthEmailを設定する必要がある
@@ -538,8 +551,7 @@ function initializeFoodtruckPage() {
 }
 
 
-/* 8) ヘルパー関数群 (変更なし) */
-// ... (以下、変更なし)
+/* 8) ヘルパー関数群 */
 function setupFoodtruckActionListeners() {
   const foodtruckSection = document.getElementById('foodtruck-section');
   if (!foodtruckSection || foodtruckSection.dataset.listenersAttached === 'true') {
