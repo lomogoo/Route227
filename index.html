@@ -230,28 +230,44 @@
           <button class="close-modal">&times;</button>
         </div>
         <div class="modal-body">
-          <form id="email-form" class="modal-body">
-            <p>スタンプ機能の利用にはログインが必要です。</p>
-            <input type="email" id="email" placeholder="メールアドレス" required />
-            <p style="font-size: 12px; color: #6c757d; margin-top: -8px; margin-bottom: 16px;">
-              ※メールが届かない場合は、迷惑メールフォルダもご確認ください。
-            </p>
-            <button type="submit" class="btn btn-primary btn-full">認証コードを送信</button>
-            <p id="email-message" class="form-message"></p>
-          </form>
-          <form id="otp-form" class="hidden">
-            <p><strong id="otp-email-display"></strong> 宛に送信された6桁のコードを入力してください。</p>
-            <input type="text" id="otp-code" placeholder="6桁のコード" required inputmode="numeric" pattern="\d{6}" />
-            <button type="submit" class="btn btn-primary btn-full">認証する</button>
-            <br>
-            <br>
-            <p style="font-size: 12px; color: #6c757d; margin-top: -8px; margin-bottom: 16px;">
-              ※メールが届かない場合は、迷惑メールフォルダもご確認ください。
-            </p>
-            <p id="otp-message" class="form-message"></p>
-            <button type="button" id="change-email-btn" class="btn-link">メールアドレスを修正する</button>
-          </form>
-        </div>
+
+  <div id="email-step">
+    <p>ログインまたは新規登録するメールアドレスを入力してください。</p>
+    <input type="email" id="auth-email" placeholder="メールアドレス" required />
+    <button id="email-next-btn" class="btn btn-primary btn-full">次へ</button>
+    <p id="email-step-message" class="form-message"></p>
+  </div>
+
+  <div id="password-step" class="hidden">
+    <p><strong id="password-email-display"></strong></p>
+    <p>パスワードを入力してください。</p>
+    <input type="password" id="auth-password" placeholder="パスワード" required />
+    <button id="login-btn" class="btn btn-primary btn-full">ログイン</button>
+    <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
+    <p id="password-step-message" class="form-message"></p>
+  </div>
+
+  <div id="register-step" class="hidden">
+    <p><strong id="register-email-display"></strong></p>
+    <p>アカウントを新規作成します。パスワードを設定してください。</p>
+    <input type="password" id="register-password" placeholder="パスワード" required />
+    <input type="password" id="register-password-confirm" placeholder="パスワード（確認用）" required />
+    <ul id="password-policy" class="password-policy">
+      <li id="policy-length">8文字以上</li>
+      <li id="policy-lowercase">小文字を含む</li>
+      <li id="policy-uppercase">大文字を含む</li>
+      <li id="policy-number">数字を含む</li>
+    </ul>
+    <button id="register-btn" class="btn btn-primary btn-full">登録してログイン</button>
+    <p id="register-step-message" class="form-message"></p>
+  </div>
+
+  <div id="message-step" class="hidden">
+      <p id="message-text"></p>
+      <button class="btn btn-primary btn-full close-modal">OK</button>
+  </div>
+</div>
+        
       </div>
     </div>
     <div class="modal" id="summary-modal">
