@@ -30,14 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupOfflineDetection();
   setupImageLazyLoading();
 
-  // パスワードリセット/設定フローの処理
   db.auth.onAuthStateChange(async (event, session) => {
-    // ユーザーがパスワードを更新した場合の処理
     if (event === "PASSWORD_RECOVERY") {
       const modal = document.getElementById('login-modal');
       switchAuthStep('message-step');
       document.getElementById('message-text').textContent = 'パスワードを更新しました。新しいパスワードでログインしてください。';
-      openModal(modal);
+      if (!modal.classList.contains('active')) {
+        openModal(modal);
+      }
     }
 
     const previousUID = globalUID;
@@ -47,8 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isInitialAuthCheckDone) {
       isInitialAuthCheckDone = true;
       const appLoader = document.getElementById('app-loader');
-      if (!appLoader.classList.contains('active')) {
-        appLoader.classList.add('active');
+      if (appLoader.classList.contains('active')) {
+          appLoader.classList.remove('active');
       }
 
       try {
@@ -58,8 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
         await showSection('feed-section', true);
-      } finally {
-        appLoader.classList.remove('active');
       }
     } else {
       if (event === 'SIGNED_IN' && !previousUID && globalUID) {
@@ -77,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
 
 /* 4) ユーティリティ関数 */
 function escapeHtml(unsafe) {
@@ -157,10 +156,7 @@ function setupImageLazyLoading() {
 }
 
 function queueAction(action) {
-  pendingActions.push({
-    ...action,
-    timestamp: Date.now()
-  });
+  pendingActions.push({ ...action, timestamp: Date.now() });
   localStorage.setItem('pendingActions', JSON.stringify(pendingActions));
 }
 
@@ -182,22 +178,19 @@ async function processPendingActions() {
 
 async function executeAction(action) {
   switch (action.type) {
-    case 'ADD_STAMP':
-      await addStamp();
-      break;
-    case 'REDEEM_REWARD':
-      await redeemReward(action.rewardType);
-      break;
-    default:
-      console.warn('Unknown action type:', action.type);
+    case 'ADD_STAMP': await addStamp(); break;
+    case 'REDEEM_REWARD': await redeemReward(action.rewardType); break;
+    default: console.warn('Unknown action type:', action.type);
   }
 }
+
 
 /* 5) 認証関連の関数 */
 function switchAuthStep(stepId) {
     const steps = ['email-step', 'password-step', 'register-step', 'message-step'];
     steps.forEach(id => {
         const el = document.getElementById(id);
+        if (!el) return;
         if (id === stepId) {
             el.classList.remove('hidden');
         } else {
@@ -213,12 +206,10 @@ function validatePassword(password) {
         uppercase: /[A-Z]/.test(password),
         number: /\d/.test(password)
     };
-    // UIのポリシー表示を更新
-    document.getElementById('policy-length').classList.toggle('valid', policies.length);
-    document.getElementById('policy-lowercase').classList.toggle('valid', policies.lowercase);
-    document.getElementById('policy-uppercase').classList.toggle('valid', policies.uppercase);
-    document.getElementById('policy-number').classList.toggle('valid', policies.number);
-    
+    document.getElementById('policy-length')?.classList.toggle('valid', policies.length);
+    document.getElementById('policy-lowercase')?.classList.toggle('valid', policies.lowercase);
+    document.getElementById('policy-uppercase')?.classList.toggle('valid', policies.uppercase);
+    document.getElementById('policy-number')?.classList.toggle('valid', policies.number);
     return Object.values(policies).every(Boolean);
 }
 
@@ -228,10 +219,10 @@ async function handleEmailNext() {
     const button = document.getElementById('email-next-btn');
 
     authEmail = emailInput.value.trim();
-    messageEl.textContent = '';
+    if (messageEl) messageEl.textContent = '';
     
     if (!authEmail) {
-        messageEl.textContent = 'メールアドレスを入力してください。';
+        if (messageEl) messageEl.textContent = 'メールアドレスを入力してください。';
         return;
     }
 
@@ -250,7 +241,7 @@ async function handleEmailNext() {
             switchAuthStep('register-step');
         }
     } catch (err) {
-        messageEl.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+        if (messageEl) messageEl.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
         console.error('User check error:', err);
     } finally {
         button.disabled = false;
@@ -263,26 +254,27 @@ async function handleLogin() {
     const messageEl = document.getElementById('password-step-message');
     const button = document.getElementById('login-btn');
     const password = passwordInput.value;
-    messageEl.textContent = '';
+    if (messageEl) messageEl.textContent = '';
 
     button.disabled = true;
     button.textContent = 'ログイン中…';
 
     try {
-        const { error } = await db.auth.signInWithPassword({
+        const { data, error } = await db.auth.signInWithPassword({
             email: authEmail,
             password: password,
         });
 
         if (error) {
-            // パスワードが設定されていない（OTPからの移行ユーザー）場合の可能性を考慮
+            // 既存ユーザーでパスワードが未設定の場合 (Invalid login credentials)
             if (error.message.includes('Invalid login credentials')) {
-                const messageStepText = document.getElementById('message-text');
-                messageStepText.innerHTML = 'アカウント保護のため、パスワードの設定をお願いします。<br>パスワード設定用のメールを送信しましたので、ご確認ください。';
-                switchAuthStep('message-step');
-                await db.auth.resetPasswordForEmail(authEmail, {
-                    redirectTo: window.location.origin + window.location.pathname
-                });
+                 const { data: { user } } = await db.auth.getUser();
+                 // ログイン試行前にユーザーが存在することは確認済みなので、
+                 // ここでエラーが出た場合はパスワードが違うか、未設定。
+                 // 安全なパスワード設定フローに誘導する。
+                 messageEl.textContent = 'パスワードが違うか、まだ設定されていません。';
+                 showToast('パスワードが違うようです。忘れましたか？', 'warning');
+
             } else {
                 throw error;
             }
@@ -291,13 +283,14 @@ async function handleLogin() {
             showToast('ログインしました', 'success');
         }
     } catch (err) {
-        messageEl.textContent = 'ログインに失敗しました。';
+        if (messageEl) messageEl.textContent = 'ログインに失敗しました。';
         console.error('Login error:', err);
     } finally {
         button.disabled = false;
         button.textContent = 'ログイン';
     }
 }
+
 
 async function handleRegister() {
     const passwordInput = document.getElementById('register-password');
@@ -307,15 +300,14 @@ async function handleRegister() {
     
     const password = passwordInput.value;
     const confirmPassword = confirmInput.value;
-    messageEl.textContent = '';
+    if (messageEl) messageEl.textContent = '';
 
     if (password !== confirmPassword) {
-        messageEl.textContent = 'パスワードが一致しません。';
+        if (messageEl) messageEl.textContent = 'パスワードが一致しません。';
         return;
     }
-
     if (!validatePassword(password)) {
-        messageEl.textContent = 'パスワードが要件を満たしていません。';
+        if (messageEl) messageEl.textContent = 'パスワードが要件を満たしていません。';
         return;
     }
     
@@ -323,16 +315,13 @@ async function handleRegister() {
     button.textContent = '登録中…';
 
     try {
-        const { error } = await db.auth.signUp({
-            email: authEmail,
-            password: password,
-        });
+        const { error } = await db.auth.signUp({ email: authEmail, password: password });
         if (error) throw error;
         
         closeModal(document.getElementById('login-modal'));
         showToast('登録完了しました。ログインしています。', 'success');
     } catch(err) {
-        messageEl.textContent = err.message || '登録に失敗しました。';
+        if (messageEl) messageEl.textContent = err.message || '登録に失敗しました。';
         console.error('Registration error:', err);
     } finally {
         button.disabled = false;
@@ -342,17 +331,24 @@ async function handleRegister() {
 
 async function handleForgotPassword() {
     const messageStepText = document.getElementById('message-text');
-    messageStepText.textContent = 'パスワード再設定用のメールを送信しました。メールをご確認ください。';
+    const passwordMessageEl = document.getElementById('password-step-message');
+    
+    // パスワード入力画面のエラーメッセージをクリア
+    if(passwordMessageEl) passwordMessageEl.textContent = '';
+    
+    messageStepText.textContent = 'パスワード再設定（または新規設定）用のメールを送信しました。メールをご確認ください。';
     switchAuthStep('message-step');
+
     try {
         await db.auth.resetPasswordForEmail(authEmail, {
-            redirectTo: window.location.origin + window.location.pathname
+            redirectTo: window.location.href.split('#')[0] // URLからハッシュを除外
         });
     } catch(err) {
         console.error('Forgot password error:', err);
         messageStepText.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
     }
 }
+
 
 /* 6) ナビゲーションと表示切替 */
 function setupStaticEventListeners() {
@@ -370,32 +366,25 @@ function setupStaticEventListeners() {
     renderArticles(currentCategory, false);
   });
   
-  // 認証モーダルのイベントリスナー
   document.getElementById('email-next-btn')?.addEventListener('click', handleEmailNext);
   document.getElementById('login-btn')?.addEventListener('click', handleLogin);
   document.getElementById('register-btn')?.addEventListener('click', handleRegister);
   document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
   
-  // パスワードポリシーのリアルタイムチェック
   document.getElementById('register-password')?.addEventListener('input', (e) => {
       validatePassword(e.target.value);
   });
 
   document.body.addEventListener('click', (e) => {
-    if (e.target.matches('.close-modal') || e.target.matches('.close-notification')) {
-      const modal = e.target.closest('.modal');
+    const modal = e.target.closest('.modal');
+    if (e.target.matches('.close-modal') || e.target.matches('.close-notification') || e.target === modal) {
       if (modal) {
           closeModal(modal);
-          // モーダルを閉じたら認証ステップを最初に戻す
           if(modal.id === 'login-modal') {
               switchAuthStep('email-step');
+              document.getElementById('auth-email').value = '';
+              document.getElementById('auth-password').value = '';
           }
-      }
-    }
-    if (e.target.matches('.modal')) {
-      closeModal(e.target);
-      if(e.target.id === 'login-modal') {
-        switchAuthStep('email-step');
       }
     }
   });
@@ -407,6 +396,8 @@ function setupStaticEventListeners() {
         closeModal(activeModal);
         if(activeModal.id === 'login-modal') {
           switchAuthStep('email-step');
+          document.getElementById('auth-email').value = '';
+          document.getElementById('auth-password').value = '';
         }
       }
     }
@@ -415,7 +406,7 @@ function setupStaticEventListeners() {
 
 async function showSection(sectionId, isInitialLoad = false) {
   const appLoader = document.getElementById('app-loader');
-  if (!isInitialLoad) appLoader.classList.add('active');
+  if (!isInitialLoad && appLoader) appLoader.classList.add('active');
 
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => {
@@ -437,7 +428,7 @@ async function showSection(sectionId, isInitialLoad = false) {
     announceToScreenReader(`${sectionName}セクションに移動しました`);
   }
 
-  if (!isInitialLoad) {
+  if (!isInitialLoad && appLoader) {
     setTimeout(() => appLoader.classList.remove('active'), 100);
   }
 }
@@ -456,6 +447,7 @@ function updateUserStatus(session) {
   }
 }
 
+
 /* 7) ページ別初期化ロジック */
 async function initializeFeedPage() {
   const categoryTabs = document.getElementById('category-tabs');
@@ -471,25 +463,24 @@ async function initializeFeedPage() {
       }
     });
   }
-
   currentPage = 0;
   currentCategory = 'all';
   document.querySelectorAll('.category-tab').forEach(t => t.classList.toggle('active', t.dataset.category === 'all'));
-
   renderArticles(currentCategory, true);
 }
 
 function initializeFoodtruckPage() {
   updateFoodtruckInfo();
   if (!globalUID) {
-    document.getElementById('login-modal').classList.add('active');
+    const loginModal = document.getElementById('login-modal');
+    if(loginModal) {
+        switchAuthStep('email-step'); // ログインモーダルは初期状態に
+        openModal(loginModal);
+    }
     updateStampDisplay(0);
     updateRewardButtons(0);
     return;
   }
-
-  updateStampDisplay(0);
-  updateRewardButtons(0);
   setupFoodtruckActionListeners();
   displayRewardHistory();
 
@@ -505,6 +496,7 @@ function initializeFoodtruckPage() {
   })();
 }
 
+
 /* 8) ヘルパー関数群 */
 function setupFoodtruckActionListeners() {
   const foodtruckSection = document.getElementById('foodtruck-section');
@@ -512,7 +504,6 @@ function setupFoodtruckActionListeners() {
     return;
   }
   foodtruckSection.dataset.listenersAttached = 'true';
-
   document.getElementById('scan-qr')?.addEventListener('click', initQRScanner);
   document.getElementById('coffee-reward')?.addEventListener('click', () => redeemReward('coffee'));
   document.getElementById('curry-reward')?.addEventListener('click', () => redeemReward('curry'));
@@ -524,7 +515,6 @@ function closeModal(modalElement) {
   if (modalElement.id === 'qr-modal' && html5QrCode && html5QrCode.isScanning) {
     html5QrCode.stop().catch(console.error);
   }
-
   const trigger = modalElement.dataset.trigger;
   if (trigger) {
     document.getElementById(trigger)?.focus();
@@ -532,6 +522,7 @@ function closeModal(modalElement) {
 }
 
 function openModal(modalElement, triggerId) {
+  if (!modalElement) return;
   modalElement.classList.add('active');
   modalElement.dataset.trigger = triggerId;
   trapFocus(modalElement);
@@ -541,6 +532,7 @@ function trapFocus(modal) {
   const focusableElements = modal.querySelectorAll(
     'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
   );
+  if (focusableElements.length === 0) return;
   const firstFocusable = focusableElements[0];
   const lastFocusable = focusableElements[focusableElements.length - 1];
 
@@ -555,18 +547,12 @@ function trapFocus(modal) {
       }
     }
   });
-
   setTimeout(() => firstFocusable?.focus(), 100);
 }
 
 async function fetchUserRow(uid) {
   try {
-    const { data, error } = await db
-      .from('users')
-      .select('stamp_count')
-      .eq('supabase_uid', uid)
-      .maybeSingle();
-
+    const { data, error } = await db.from('users').select('stamp_count').eq('supabase_uid', uid).maybeSingle();
     if (error) throw error;
     return data?.stamp_count || 0;
   } catch (err) {
@@ -577,11 +563,7 @@ async function fetchUserRow(uid) {
 
 async function updateStampCount(uid, newCount) {
   try {
-    const { data, error } = await db.from('users')
-      .update({ stamp_count: newCount, updated_at: new Date().toISOString() })
-      .eq('supabase_uid', uid)
-      .select()
-      .single();
+    const { data, error } = await db.from('users').update({ stamp_count: newCount, updated_at: new Date().toISOString() }).eq('supabase_uid', uid).select().single();
     if (error) throw error;
     return data.stamp_count;
   } catch (err) {
@@ -607,7 +589,6 @@ function updateStampDisplay(count) {
 function createParticles(element) {
   const rect = element.getBoundingClientRect();
   const particles = 15;
-
   for (let i = 0; i < particles; i++) {
     const particle = document.createElement('div');
     particle.className = 'particle';
@@ -625,7 +606,6 @@ function updateRewardButtons(count) {
   const curryBtn = document.getElementById('curry-reward');
   const coffeeItem = document.getElementById('coffee-reward-item');
   const curryItem = document.getElementById('curry-reward-item');
-
   if (coffeeBtn) coffeeBtn.disabled = count < 3;
   if (curryBtn) curryBtn.disabled = count < 6;
   coffeeItem?.classList.toggle('available', count >= 3);
@@ -637,42 +617,34 @@ function showNotification(title, msg) {
   if (modal) {
     document.getElementById('notification-title').textContent = title;
     document.getElementById('notification-message').innerHTML = msg;
-    openModal(modal, document.activeElement.id);
+    openModal(modal, document.activeElement?.id);
   }
 }
 
 async function addStamp() {
   if (!globalUID) {
-    showNotification('ログインが必要です', 'スタンプを獲得するにはログインしてください。');
-    document.getElementById('login-modal').classList.add('active');
+    openModal(document.getElementById('login-modal'));
     return;
   }
-
   if (!navigator.onLine) {
     queueAction({ type: 'ADD_STAMP' });
     showToast('オフラインです。オンライン復帰後にスタンプを追加します。', 'warning');
     return;
   }
-
   try {
     const count = await fetchWithRetry(() => fetchUserRow(globalUID));
     if (count >= 6) {
       showNotification('コンプリート！', 'スタンプが6個たまりました！<br>特典と交換してください。');
       return;
     }
-
     const newCount = await fetchWithRetry(() => updateStampCount(globalUID, count + 1));
     updateStampDisplay(newCount);
     updateRewardButtons(newCount);
 
-    if (newCount === 3) {
-      showNotification('🎉 特典解除！', 'コーヒー1杯と交換できます！<br>あと3スタンプでカレー1杯無料！');
-    } else if (newCount === 6) {
-      showNotification('🎊 コンプリート！', '全てのスタンプを集めました！<br>カレー1杯と交換できます！');
-    } else {
-      showNotification('スタンプ獲得', `現在 ${newCount} 個（あと${6 - newCount}個でカレー無料）`);
-    }
-
+    if (newCount === 3) showNotification('🎉 特典解除！', 'コーヒー1杯と交換できます！<br>あと3スタンプでカレー1杯無料！');
+    else if (newCount === 6) showNotification('🎊 コンプリート！', '全てのスタンプを集めました！<br>カレー1杯と交換できます！');
+    else showNotification('スタンプ獲得', `現在 ${newCount} 個（あと${6 - newCount}個でカレー無料）`);
+    
     announceToScreenReader(`スタンプを獲得しました。現在${newCount}個です。`);
   } catch (error) {
     console.error('Stamp addition failed:', error);
@@ -682,39 +654,27 @@ async function addStamp() {
 
 async function redeemReward(type) {
   if (!globalUID) return;
-
   if (!navigator.onLine) {
     queueAction({ type: 'REDEEM_REWARD', rewardType: type });
     showToast('オフラインです。オンライン復帰後に特典を交換します。', 'warning');
     return;
   }
-
   try {
     const count = await fetchWithRetry(() => fetchUserRow(globalUID));
     const required = type === 'coffee' ? 3 : 6;
     const rewardName = type === 'coffee' ? 'コーヒー1杯' : 'カレー1杯';
-    
     if (count < required) return;
-
-    if (!confirm(`${rewardName}と交換しますか？\n（スタンプが${required}個消費されます）`)) {
-      return;
-    }
+    if (!confirm(`${rewardName}と交換しますか？\n（スタンプが${required}個消費されます）`)) return;
 
     const newCount = await fetchWithRetry(() => updateStampCount(globalUID, count - required));
-    
-    await db.from('reward_history').insert({
-      user_id: globalUID,
-      reward_name: rewardName,
-      points_consumed: required
-    });
+    await db.from('reward_history').insert({ user_id: globalUID, reward_name: rewardName, points_consumed: required });
     
     updateStampDisplay(newCount);
     updateRewardButtons(newCount);
-    displayRewardHistory(); // 履歴表示を更新
+    displayRewardHistory();
     
     showNotification('交換完了', `${rewardName}と交換しました！<br>店舗でスタッフにお見せください。`);
     showToast('特典を交換しました！', 'success');
-
     announceToScreenReader(`${rewardName}と交換しました。`);
   } catch (error) {
     showNotification('エラー', '特典の交換に失敗しました。');
@@ -724,7 +684,6 @@ async function redeemReward(type) {
 function initQRScanner() {
   const qrModal = document.getElementById('qr-modal');
   openModal(qrModal, 'scan-qr');
-
   let isProcessing = false;
   html5QrCode = new Html5Qrcode('qr-reader');
   html5QrCode.start(
@@ -735,13 +694,10 @@ function initQRScanner() {
       isProcessing = true;
       if (html5QrCode.isScanning) await html5QrCode.stop();
       closeModal(qrModal);
-      if (decodedText === appData.qrString) {
-        await addStamp();
-      } else {
-        showNotification('無効なQR', 'お店のQRコードではありません。');
-      }
+      if (decodedText === appData.qrString) await addStamp();
+      else showNotification('無効なQR', 'お店のQRコードではありません。');
     },
-    (errorMessage) => { }
+    (errorMessage) => {}
   ).catch(() => {
     document.getElementById('qr-reader').innerHTML = '<p style="color: red;">カメラの起動に失敗しました</p>';
     showToast('カメラへのアクセスが拒否されました', 'error');
@@ -751,12 +707,9 @@ function initQRScanner() {
 function createArticleCard(cardData) {
   const placeholderUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvYWRpbmcuLi48L3RleHQ+PC9zdmc+';
   const fallbackUrl = 'https://via.placeholder.com/400x250.png?text=Route227';
-
   const div = document.createElement('div');
   div.className = 'card';
-
   const imageUrl = cardData.image_url || fallbackUrl;
-
   div.innerHTML = `
     <div class="article-link" data-article-id="${cardData.id}" role="button" tabindex="0">
       <div class="image-container">
@@ -767,14 +720,9 @@ function createArticleCard(cardData) {
         <p class="article-excerpt">${escapeHtml(cardData.summary)}</p>
       </div>
     </div>`;
-
   const img = div.querySelector('.lazy-image');
-  if (imageObserver) {
-    imageObserver.observe(img);
-  } else {
-    img.src = img.dataset.src;
-  }
-
+  if (imageObserver) imageObserver.observe(img);
+  else img.src = img.dataset.src;
   return div;
 }
 
@@ -782,7 +730,6 @@ function renderArticles(category, clearContainer) {
   const articlesContainer = document.getElementById('articles-container');
   const loadMoreBtn = document.getElementById('load-more-btn');
   if (!articlesContainer || !loadMoreBtn) return;
-
   isLoadingMore = true;
   if (clearContainer) {
     articlesContainer.innerHTML = '<div class="loading-spinner"></div>';
@@ -791,61 +738,41 @@ function renderArticles(category, clearContainer) {
     loadMoreBtn.textContent = '読み込み中…';
     loadMoreBtn.disabled = true;
   }
-
   (async () => {
     try {
       const from = currentPage * ARTICLES_PER_PAGE;
       const to = from + ARTICLES_PER_PAGE - 1;
-
       let query = db.from('articles').select('*').order('created_at', { ascending: false }).range(from, to);
-      if (category !== 'all') {
-        query = query.eq('category', category);
-      }
-
+      if (category !== 'all') query = query.eq('category', category);
       const { data: newArticles, error } = await query;
       if (error) throw error;
-
-      if (clearContainer) {
-        articlesContainer.innerHTML = '';
-      }
-
+      if (clearContainer) articlesContainer.innerHTML = '';
       articlesCache.push(...newArticles);
 
       if (articlesCache.length === 0 && clearContainer) {
         articlesContainer.innerHTML = '<p style="text-align: center; padding: 20px;">記事はまだありません。</p>';
       } else {
         const fragment = document.createDocumentFragment();
-        newArticles.forEach(cardData => {
-          fragment.appendChild(createArticleCard(cardData));
-        });
+        newArticles.forEach(cardData => fragment.appendChild(createArticleCard(cardData)));
         articlesContainer.appendChild(fragment);
       }
-
-      if (newArticles.length < ARTICLES_PER_PAGE) {
-        loadMoreBtn.classList.remove('visible');
-      } else {
-        loadMoreBtn.classList.add('visible');
-      }
+      loadMoreBtn.classList.toggle('visible', newArticles.length >= ARTICLES_PER_PAGE);
 
       document.querySelectorAll('.article-link').forEach(link => {
         if (link.dataset.listenerAttached) return;
         link.dataset.listenerAttached = 'true';
-        link.addEventListener('click', (e) => {
-          const articleId = e.currentTarget.dataset.articleId;
-          showSummaryModal(parseInt(articleId, 10));
-        });
+        const showModal = () => showSummaryModal(parseInt(link.dataset.articleId, 10));
+        link.addEventListener('click', showModal);
         link.addEventListener('keypress', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            const articleId = e.currentTarget.dataset.articleId;
-            showSummaryModal(parseInt(articleId, 10));
+            showModal();
           }
         });
       });
-
     } catch (error) {
       console.error("記事の読み込みエラー:", error);
-      articlesContainer.innerHTML = '<div class="status status--error">記事の読み込みに失敗しました。</div>';
+      if(articlesContainer) articlesContainer.innerHTML = '<p style="text-align: center; color: red;">記事の読み込みに失敗しました。</p>';
       showToast('記事の読み込みに失敗しました', 'error');
     } finally {
       isLoadingMore = false;
@@ -858,27 +785,22 @@ function renderArticles(category, clearContainer) {
 function showSummaryModal(articleId) {
   const article = articlesCache.find(a => a.id === articleId);
   if (!article) return;
-
   const modal = document.getElementById('summary-modal');
   const imgEl = document.getElementById('summary-image');
   const titleEl = document.getElementById('summary-title');
   const bulletsEl = document.getElementById('summary-bullets');
   const readMoreBtn = document.getElementById('summary-read-more');
-
-  const placeholderUrl = 'https://via.placeholder.com/400x250.png?text=Route227';
+  
+  const fallbackUrl = 'https://via.placeholder.com/400x250.png?text=Route227';
   const imageUrl = article.image_url || fallbackUrl;
   imgEl.style.backgroundImage = `url('${imageUrl}')`;
-
   titleEl.textContent = article.title;
 
   if (article.summary_points && Array.isArray(article.summary_points)) {
-    bulletsEl.innerHTML = article.summary_points
-      .map(point => `<li>${escapeHtml(point).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`)
-      .join('');
+    bulletsEl.innerHTML = article.summary_points.map(p => `<li>${escapeHtml(p).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</li>`).join('');
   } else {
     bulletsEl.innerHTML = '';
   }
-
   const articleUrl = article.article_url?.trim();
   if (!articleUrl) {
     readMoreBtn.style.display = 'none';
@@ -886,125 +808,73 @@ function showSummaryModal(articleId) {
     readMoreBtn.href = articleUrl;
     readMoreBtn.style.display = 'flex';
   }
-
   openModal(modal, 'articles-container');
-}
-
-function promiseWithTimeout(promise, ms, timeoutError = new Error('Promise timed out')) {
-  const timeout = new Promise((_, reject) => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      reject(timeoutError);
-    }, ms);
-  });
-  return Promise.race([promise, timeout]);
 }
 
 function handleUrlHash() {
   const hash = window.location.hash;
-
   if (hash && hash.startsWith('#article-')) {
     const articleId = parseInt(hash.substring(9), 10);
     if (isNaN(articleId)) return;
-
     let attempts = 0;
     const maxAttempts = 20;
-
     const tryShowModal = () => {
       const article = articlesCache.find(a => a.id === articleId);
-
-      if (article) {
-        showSummaryModal(articleId);
-      } else if (attempts < maxAttempts) {
+      if (article) showSummaryModal(articleId);
+      else if (attempts < maxAttempts) {
         attempts++;
         setTimeout(tryShowModal, 500);
       }
     };
-
     tryShowModal();
     history.pushState("", document.title, window.location.pathname + window.location.search);
   }
 }
 
-// ページキャッシュからの復元時にリロード
 window.addEventListener('pageshow', function (event) {
-  if (event.persisted) {
-    window.location.reload();
-  }
+  if (event.persisted) window.location.reload();
 });
 
-// 今日の出店情報を取得
 async function updateFoodtruckInfo() {
   const infoContainer = document.getElementById('today-info-container');
   const imageContainer = document.getElementById('schedule-image-container');
-
-  if (!infoContainer || !imageContainer) {
-    console.error('Error: HTML要素が見つかりません。');
-    return;
-  }
+  if (!infoContainer || !imageContainer) return;
 
   const scheduleImageUrl = 'https://hccairtzksnnqdujalgv.supabase.co/storage/v1/object/public/schedule-images//schedule.png';
   imageContainer.src = scheduleImageUrl;
   imageContainer.style.display = 'block';
-
   imageContainer.onerror = () => {
-    console.error('[FAIL] スケジュール画像の読み込みに失敗しました。');
     imageContainer.style.display = 'none';
     showToast('スケジュール画像の読み込みに失敗しました', 'error');
   };
-
   infoContainer.innerHTML = '<p>情報を読み込んでいます…</p>';
 
   try {
     const today = new Date();
     today.setHours(today.getHours() + 9);
     const todayString = today.toISOString().split('T')[0];
-    console.log(`[OK] 本日の日付 (${todayString}) で情報を検索します。`);
-
-    const { data, error } = await fetchWithRetry(() =>
-      db.from('schedule')
-        .select('message')
-        .eq('date', todayString)
-        .single()
-    );
-
+    const { data, error } = await fetchWithRetry(() => db.from('schedule').select('message').eq('date', todayString).single());
     if (error && error.code !== 'PGRST116') throw error;
-
-    if (data && data.message) {
-      console.log('[OK] メッセージが見つかりました:', data.message);
-      infoContainer.innerHTML = `<p>${escapeHtml(data.message).replace(/\n/g, '<br>')}</p>`;
-    } else {
-      console.log('[INFO] 本日の出店情報メッセージは見つかりませんでした。');
-      infoContainer.innerHTML = '<p>本日の出店はありません。</p>';
-    }
+    if (data && data.message) infoContainer.innerHTML = `<p>${escapeHtml(data.message).replace(/\n/g, '<br>')}</p>`;
+    else infoContainer.innerHTML = '<p>本日の出店はありません。</p>';
   } catch (err) {
-    console.error('[FATAL] 処理中に致命的なエラーが発生しました。', err);
     infoContainer.innerHTML = '<p>エラーが発生しました。情報の取得に失敗しました。</p>';
     showToast('出店情報の取得に失敗しました', 'error');
   }
 }
 
-// ランクページ初期化
 function initializeRankPage() {
   console.log('Rank page initialization placeholder');
 }
 
 async function displayRewardHistory() {
   if (!globalUID) return;
-
   const historyList = document.getElementById('history-list');
   const emptyMessage = document.getElementById('history-empty-message');
   if (!historyList || !emptyMessage) return;
-
   try {
-    const { data, error } = await db
-      .from('reward_history')
-      .select('*')
-      .eq('user_id', globalUID)
-      .order('exchanged_at', { ascending: false });
-
+    const { data, error } = await db.from('reward_history').select('*').eq('user_id', globalUID).order('exchanged_at', { ascending: false });
     if (error) throw error;
-
     if (data.length === 0) {
       emptyMessage.classList.remove('hidden');
       historyList.innerHTML = '';
@@ -1022,8 +892,7 @@ async function displayRewardHistory() {
             <div class="history-points">
               -${item.points_consumed}<span>pt</span>
             </div>
-          </li>
-        `;
+          </li>`;
       }).join('');
     }
   } catch (err) {
@@ -1032,7 +901,6 @@ async function displayRewardHistory() {
   }
 }
 
-// スクリーンリーダー用のスタイル
 const srOnlyStyle = document.createElement('style');
 srOnlyStyle.textContent = `.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`;
 document.head.appendChild(srOnlyStyle);
