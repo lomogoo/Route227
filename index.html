@@ -229,29 +229,28 @@
           <h3 id="login-title">ログイン</h3>
           <button class="close-modal">&times;</button>
         </div>
-        <div class="modal-body">
-
+       <div class="modal-body">
   <div id="email-step">
     <p>ログインまたは新規登録するメールアドレスを入力してください。</p>
-    <input type="email" id="auth-email" placeholder="メールアドレス" required />
+    <input type="email" id="auth-email" placeholder="メールアドレス" required autocomplete="email" />
     <button id="email-next-btn" class="btn btn-primary btn-full">次へ</button>
     <p id="email-step-message" class="form-message"></p>
   </div>
 
   <div id="password-step" class="hidden">
+    <p>ようこそ！パスワードを入力してください。</p>
     <p><strong id="password-email-display"></strong></p>
-    <p>パスワードを入力してください。</p>
-    <input type="password" id="auth-password" placeholder="パスワード" required />
+    <input type="password" id="auth-password" placeholder="パスワード" required autocomplete="current-password" />
     <button id="login-btn" class="btn btn-primary btn-full">ログイン</button>
     <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
     <p id="password-step-message" class="form-message"></p>
   </div>
 
   <div id="register-step" class="hidden">
-    <p><strong id="register-email-display"></strong></p>
     <p>アカウントを新規作成します。パスワードを設定してください。</p>
-    <input type="password" id="register-password" placeholder="パスワード" required />
-    <input type="password" id="register-password-confirm" placeholder="パスワード（確認用）" required />
+    <p><strong id="register-email-display"></strong></p>
+    <input type="password" id="register-password" placeholder="パスワード" required autocomplete="new-password" />
+    <input type="password" id="register-password-confirm" placeholder="パスワード（確認用）" required autocomplete="new-password" />
     <ul id="password-policy" class="password-policy">
       <li id="policy-length">8文字以上</li>
       <li id="policy-lowercase">小文字を含む</li>
