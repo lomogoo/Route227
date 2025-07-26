@@ -226,6 +226,13 @@ async function handleEmailNext() {
         return;
     }
 
+    // メールアドレスの基本的な形式チェック
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(authEmail)) {
+        if (messageEl) messageEl.textContent = '有効なメールアドレスを入力してください。';
+        return;
+    }
+
     button.disabled = true;
     button.textContent = '確認中…';
 
@@ -233,32 +240,41 @@ async function handleEmailNext() {
         // ダミーパスワードでサインインを試みて、ユーザーの存在を確認
         const { data, error } = await db.auth.signInWithPassword({
             email: authEmail,
-            password: 'dummy_password_to_check_user_exists_12345'
+            password: 'dummy_check_12345!@#$%'
         });
 
+        // デバッグ用にエラーの詳細を出力
+        console.log('Auth check response:', { data, error });
+
         if (error) {
-            // エラーメッセージで既存ユーザーかどうかを判断
-            if (error.message.includes('Invalid login credentials')) {
-                // 既存ユーザー（パスワードが違う）
-                document.getElementById('password-email-display').textContent = authEmail;
-                switchAuthStep('password-step');
-            } else if (error.message.includes('User not found') || error.message.includes('Invalid email')) {
+            // エラーコードやメッセージで判断
+            const errorMessage = error.message?.toLowerCase() || '';
+            const errorCode = error.code?.toLowerCase() || '';
+            
+            // ユーザーが存在しない場合のパターン
+            if (errorMessage.includes('user not found') || 
+                errorMessage.includes('invalid email') ||
+                errorMessage.includes('email not confirmed') ||
+                errorCode === 'user_not_found') {
                 // 新規ユーザー
                 document.getElementById('register-email-display').textContent = authEmail;
                 switchAuthStep('register-step');
             } else {
-                // その他のエラー
-                throw error;
+                // 既存ユーザー（パスワードエラーまたはその他）
+                document.getElementById('password-email-display').textContent = authEmail;
+                switchAuthStep('password-step');
             }
         } else {
-            // 万が一ログインできてしまった場合（ありえないはず）
+            // 万が一ログインできてしまった場合
             await db.auth.signOut();
             document.getElementById('password-email-display').textContent = authEmail;
             switchAuthStep('password-step');
         }
     } catch (err) {
-        if (messageEl) messageEl.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+        // ネットワークエラーなどの場合は、とりあえず既存ユーザーとして扱う
         console.error('User check error:', err);
+        document.getElementById('password-email-display').textContent = authEmail;
+        switchAuthStep('password-step');
     } finally {
         button.disabled = false;
         button.textContent = '次へ';
@@ -272,6 +288,11 @@ async function handleLogin() {
     const password = passwordInput.value;
     if (messageEl) messageEl.textContent = '';
 
+    if (!password) {
+        if (messageEl) messageEl.textContent = 'パスワードを入力してください。';
+        return;
+    }
+
     button.disabled = true;
     button.textContent = 'ログイン中…';
 
@@ -281,19 +302,24 @@ async function handleLogin() {
             password: password,
         });
 
-        if (error) {
-            // 既存ユーザーでパスワードが未設定の場合 (Invalid login credentials)
-            if (error.message.includes('Invalid login credentials')) {
-                 const { data: { user } } = await db.auth.getUser();
-                 // ログイン試行前にユーザーが存在することは確認済みなので、
-                 // ここでエラーが出た場合はパスワードが違うか、未設定。
-                 // 安全なパスワード設定フローに誘導する。
-                 messageEl.textContent = 'パスワードが違うか、まだ設定されていません。';
-                 showToast('パスワードが違うようです。忘れましたか？', 'warning');
+        console.log('Login response:', { data, error });
 
+        if (error) {
+            const errorMessage = error.message?.toLowerCase() || '';
+            
+            // パスワードが間違っている場合
+            if (errorMessage.includes('invalid login credentials') || 
+                errorMessage.includes('invalid password') ||
+                errorMessage.includes('email not confirmed')) {
+                messageEl.textContent = 'パスワードが正しくありません。';
+            } else if (errorMessage.includes('user not found')) {
+                // ユーザーが存在しない（通常はここには来ないはず）
+                messageEl.textContent = 'ユーザーが見つかりません。';
             } else {
-                throw error;
+                // その他のエラー
+                messageEl.textContent = 'ログインに失敗しました。しばらくしてから再試行してください。';
             }
+            console.error('Login error details:', error);
         } else {
             closeModal(document.getElementById('login-modal'));
             showToast('ログインしました', 'success');
