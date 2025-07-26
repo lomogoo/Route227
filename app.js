@@ -230,15 +230,31 @@ async function handleEmailNext() {
     button.textContent = '確認中…';
 
     try {
-        const { data: userExists, error } = await db.rpc('check_user_exists', { user_email: authEmail });
-        if (error) throw error;
-        
-        if (userExists) {
+        // ダミーパスワードでサインインを試みて、ユーザーの存在を確認
+        const { data, error } = await db.auth.signInWithPassword({
+            email: authEmail,
+            password: 'dummy_password_to_check_user_exists_12345'
+        });
+
+        if (error) {
+            // エラーメッセージで既存ユーザーかどうかを判断
+            if (error.message.includes('Invalid login credentials')) {
+                // 既存ユーザー（パスワードが違う）
+                document.getElementById('password-email-display').textContent = authEmail;
+                switchAuthStep('password-step');
+            } else if (error.message.includes('User not found') || error.message.includes('Invalid email')) {
+                // 新規ユーザー
+                document.getElementById('register-email-display').textContent = authEmail;
+                switchAuthStep('register-step');
+            } else {
+                // その他のエラー
+                throw error;
+            }
+        } else {
+            // 万が一ログインできてしまった場合（ありえないはず）
+            await db.auth.signOut();
             document.getElementById('password-email-display').textContent = authEmail;
             switchAuthStep('password-step');
-        } else {
-            document.getElementById('register-email-display').textContent = authEmail;
-            switchAuthStep('register-step');
         }
     } catch (err) {
         if (messageEl) messageEl.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
