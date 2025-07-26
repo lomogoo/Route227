@@ -763,7 +763,6 @@ input[type="text"]:focus {
   margin-bottom: 80px;
 }
 
-/* style.css に追記 */
 
 /* 18. Password Policy */
 .password-policy {
@@ -779,4 +778,17 @@ input[type="text"]:focus {
 .password-policy li.valid {
   color: #2A9D8F;
   text-decoration: line-through;
+}
+
+/* 19. Auth Note */
+.auth-note {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #6c757d;
+}
+.auth-note p {
+  margin: 4px 0;
 }
