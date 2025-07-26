@@ -406,11 +406,14 @@ function setupStaticEventListeners() {
     document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
     document.getElementById('signup-password')?.addEventListener('input', (e) => validatePassword(e.target.value));
 
+    // --- 全てのモーダルを閉じるための共通リスナー ---
     document.body.addEventListener('click', (e) => {
         const modal = e.target.closest('.modal');
-        if (e.target.matches('.close-modal') || e.target === modal) {
+        // .close-modal, .modal-ok-btn, またはモーダルの背景クリックで閉じる
+        if (e.target.matches('.close-modal, .modal-ok-btn') || e.target === modal) {
             if (modal) {
                 closeModal(modal);
+                // 認証モーダルを閉じた場合は、状態をリセット
                 if (modal.id === 'login-modal') {
                     switchAuthStep('auth-initial-step');
                     authEmail = '';
@@ -590,7 +593,7 @@ async function fetchUserRow(uid) {
     if (error) throw error;
     return data?.stamp_count || 0;
   } catch (err) {
-    showNotification('データベースエラー', 'ユーザー情報の取得に失敗しました。');
+    showNotification({ title: 'データベースエラー', msg: 'ユーザー情報の取得に失敗しました。' });
     throw err;
   }
 }
@@ -601,7 +604,7 @@ async function updateStampCount(uid, newCount) {
     if (error) throw error;
     return data.stamp_count;
   } catch (err) {
-    showNotification('エラー', 'スタンプの保存に失敗しました。');
+    showNotification({ title: 'エラー', msg: 'スタンプの保存に失敗しました。' });
     throw err;
   }
 }
@@ -646,9 +649,12 @@ function updateRewardButtons(count) {
   curryItem?.classList.toggle('available', count >= 6);
 }
 
-function showNotification(title, msg) {
+// 通知表示関数 (刷新)
+function showNotification(options) {
+  const { title, msg, icon = 'ℹ️' } = options;
   const modal = document.getElementById('notification-modal');
   if (modal) {
+    document.getElementById('notification-icon').textContent = icon;
     document.getElementById('notification-title').textContent = title;
     document.getElementById('notification-message').innerHTML = msg;
     openModal(modal, document.activeElement?.id);
@@ -668,21 +674,21 @@ async function addStamp() {
   try {
     const count = await fetchWithRetry(() => fetchUserRow(globalUID));
     if (count >= 6) {
-      showNotification('コンプリート！', 'スタンプが6個たまりました！<br>特典と交換してください。');
+      showNotification({ title: 'コンプリート！', msg: 'スタンプが6個たまりました！<br>特典と交換してください。', icon: '🎊' });
       return;
     }
     const newCount = await fetchWithRetry(() => updateStampCount(globalUID, count + 1));
     updateStampDisplay(newCount);
     updateRewardButtons(newCount);
 
-    if (newCount === 3) showNotification('🎉 特典解除！', 'コーヒー1杯と交換できます！<br>あと3スタンプでカレー1杯無料！');
-    else if (newCount === 6) showNotification('🎊 コンプリート！', '全てのスタンプを集めました！<br>カレー1杯と交換できます！');
-    else showNotification('スタンプ獲得', `現在 ${newCount} 個（あと${6 - newCount}個でカレー無料）`);
+    if (newCount === 3) showNotification({ title: '特典解除！', msg: 'コーヒー1杯と交換できます！<br>あと3スタンプでカレー1杯無料！', icon: '🎉' });
+    else if (newCount === 6) showNotification({ title: 'コンプリート！', msg: '全てのスタンプを集めました！<br>カレー1杯と交換できます！', icon: '🎊' });
+    else showNotification({ title: 'スタンプ獲得', msg: `現在 ${newCount} 個（あと${6 - newCount}個でカレー無料）`, icon: '👍' });
     
     announceToScreenReader(`スタンプを獲得しました。現在${newCount}個です。`);
   } catch (error) {
     console.error('Stamp addition failed:', error);
-    showNotification('エラー', 'スタンプの追加に失敗しました。<br>インターネット接続を確認してください。');
+    showNotification({ title: 'エラー', msg: 'スタンプの追加に失敗しました。<br>インターネット接続を確認してください。', icon: '⚠️' });
   }
 }
 
@@ -697,6 +703,8 @@ async function redeemReward(type) {
     const count = await fetchWithRetry(() => fetchUserRow(globalUID));
     const required = type === 'coffee' ? 3 : 6;
     const rewardName = type === 'coffee' ? 'コーヒー1杯' : 'カレー1杯';
+    const icon = type === 'coffee' ? '☕️' : '🍛';
+
     if (count < required) return;
     if (!confirm(`${rewardName}と交換しますか？\n（スタンプが${required}個消費されます）`)) return;
 
@@ -707,11 +715,11 @@ async function redeemReward(type) {
     updateRewardButtons(newCount);
     displayRewardHistory();
     
-    showNotification('交換完了', `${rewardName}と交換しました！<br>店舗でスタッフにお見せください。`);
+    showNotification({ title: '交換完了', msg: `${rewardName}と交換しました！<br>店舗でスタッフにお見せください。`, icon: icon });
     showToast('特典を交換しました！', 'success');
     announceToScreenReader(`${rewardName}と交換しました。`);
   } catch (error) {
-    showNotification('エラー', '特典の交換に失敗しました。');
+    showNotification({ title: 'エラー', msg: '特典の交換に失敗しました。', icon: '⚠️' });
   }
 }
 
@@ -729,7 +737,7 @@ function initQRScanner() {
       if (html5QrCode.isScanning) await html5QrCode.stop();
       closeModal(qrModal);
       if (decodedText === appData.qrString) await addStamp();
-      else showNotification('無効なQR', 'お店のQRコードではありません。');
+      else showNotification({ title: '無効なQR', msg: 'お店のQRコードではありません。', icon: '🤔' });
     },
     (errorMessage) => {}
   ).catch(() => {
@@ -917,10 +925,16 @@ async function displayRewardHistory() {
       historyList.innerHTML = data.map(item => {
         const date = new Date(item.exchanged_at);
         const formattedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        const icon = item.reward_name.includes('コーヒー') ? '☕️' : '🍛';
         return `
-          <li class="history-item">
+          <li class="history-item" 
+              data-reward="${escapeHtml(item.reward_name)}" 
+              data-date="${formattedDate}" 
+              data-points="${item.points_consumed}"
+              data-icon="${icon}"
+              tabindex="0" role="button">
             <div class="history-info">
-              <span class="history-reward-name">${escapeHtml(item.reward_name)}</span>
+              <span class="history-reward-name">${icon} ${escapeHtml(item.reward_name)}</span>
               <span class="history-date">${formattedDate}</span>
             </div>
             <div class="history-points">
@@ -928,11 +942,32 @@ async function displayRewardHistory() {
             </div>
           </li>`;
       }).join('');
+      
+      // イベントリスナーを再設定
+      document.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', showHistoryDetail);
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                showHistoryDetail(e);
+            }
+        });
+      });
     }
   } catch (err) {
     console.error("履歴の取得エラー:", err);
     showToast('交換履歴の取得に失敗しました', 'error');
   }
+}
+
+function showHistoryDetail(event) {
+    const item = event.currentTarget;
+    const modal = document.getElementById('history-detail-modal');
+    document.getElementById('history-detail-icon').textContent = item.dataset.icon;
+    document.getElementById('history-detail-title').textContent = item.dataset.reward;
+    document.getElementById('history-detail-date').textContent = item.dataset.date;
+    document.getElementById('history-detail-points').textContent = item.dataset.points;
+    openModal(modal);
 }
 
 const srOnlyStyle = document.createElement('style');
