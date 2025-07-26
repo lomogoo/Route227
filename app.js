@@ -187,7 +187,7 @@ async function executeAction(action) {
 
 /* 5) 認証関連の関数 */
 function switchAuthStep(stepId) {
-    const steps = ['email-step', 'password-step', 'register-step', 'message-step'];
+    const steps = ['email-step', 'password-step', 'register-step', 'message-step', 'unified-auth-step'];
     steps.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -216,8 +216,7 @@ function validatePassword(password) {
 async function handleEmailNext() {
     const emailInput = document.getElementById('auth-email');
     const messageEl = document.getElementById('email-step-message');
-    const button = document.getElementById('email-next-btn');
-
+    
     authEmail = emailInput.value.trim();
     if (messageEl) messageEl.textContent = '';
     
@@ -233,59 +232,17 @@ async function handleEmailNext() {
         return;
     }
 
-    button.disabled = true;
-    button.textContent = '確認中…';
-
-    try {
-        // ダミーパスワードでサインインを試みて、ユーザーの存在を確認
-        const { data, error } = await db.auth.signInWithPassword({
-            email: authEmail,
-            password: 'dummy_check_12345!@#$%'
-        });
-
-        // デバッグ用にエラーの詳細を出力
-        console.log('Auth check response:', { data, error });
-
-        if (error) {
-            // エラーコードやメッセージで判断
-            const errorMessage = error.message?.toLowerCase() || '';
-            const errorCode = error.code?.toLowerCase() || '';
-            
-            // ユーザーが存在しない場合のパターン
-            if (errorMessage.includes('user not found') || 
-                errorMessage.includes('invalid email') ||
-                errorMessage.includes('email not confirmed') ||
-                errorCode === 'user_not_found') {
-                // 新規ユーザー
-                document.getElementById('register-email-display').textContent = authEmail;
-                switchAuthStep('register-step');
-            } else {
-                // 既存ユーザー（パスワードエラーまたはその他）
-                document.getElementById('password-email-display').textContent = authEmail;
-                switchAuthStep('password-step');
-            }
-        } else {
-            // 万が一ログインできてしまった場合
-            await db.auth.signOut();
-            document.getElementById('password-email-display').textContent = authEmail;
-            switchAuthStep('password-step');
-        }
-    } catch (err) {
-        // ネットワークエラーなどの場合は、とりあえず既存ユーザーとして扱う
-        console.error('User check error:', err);
-        document.getElementById('password-email-display').textContent = authEmail;
-        switchAuthStep('password-step');
-    } finally {
-        button.disabled = false;
-        button.textContent = '次へ';
-    }
+    // 統合認証画面へ
+    document.getElementById('unified-email-display').textContent = authEmail;
+    switchAuthStep('unified-auth-step');
 }
 
-async function handleLogin() {
-    const passwordInput = document.getElementById('auth-password');
-    const messageEl = document.getElementById('password-step-message');
-    const button = document.getElementById('login-btn');
+async function handleUnifiedLogin() {
+    const passwordInput = document.getElementById('unified-password');
+    const messageEl = document.getElementById('unified-auth-message');
+    const button = document.getElementById('unified-login-btn');
     const password = passwordInput.value;
+    
     if (messageEl) messageEl.textContent = '';
 
     if (!password) {
@@ -294,96 +251,101 @@ async function handleLogin() {
     }
 
     button.disabled = true;
-    button.textContent = 'ログイン中…';
+    button.textContent = '処理中…';
 
     try {
-        const { data, error } = await db.auth.signInWithPassword({
+        // まずログインを試みる
+        const { data: loginData, error: loginError } = await db.auth.signInWithPassword({
             email: authEmail,
             password: password,
         });
 
-        console.log('Login response:', { data, error });
-
-        if (error) {
-            const errorMessage = error.message?.toLowerCase() || '';
-            
-            // パスワードが間違っている場合
-            if (errorMessage.includes('invalid login credentials') || 
-                errorMessage.includes('invalid password') ||
-                errorMessage.includes('email not confirmed')) {
-                messageEl.textContent = 'パスワードが正しくありません。';
-            } else if (errorMessage.includes('user not found')) {
-                // ユーザーが存在しない（通常はここには来ないはず）
-                messageEl.textContent = 'ユーザーが見つかりません。';
-            } else {
-                // その他のエラー
-                messageEl.textContent = 'ログインに失敗しました。しばらくしてから再試行してください。';
-            }
-            console.error('Login error details:', error);
-        } else {
+        if (!loginError) {
+            // ログイン成功
             closeModal(document.getElementById('login-modal'));
             showToast('ログインしました', 'success');
+            
+            // 既存ユーザーのスタンプ数を確認・移行
+            await migrateUserStamps(loginData.user.id);
+        } else {
+            // ログイン失敗 - 新規登録を試みる
+            if (!validatePassword(password)) {
+                if (messageEl) messageEl.textContent = 'パスワードが要件を満たしていません。';
+                button.disabled = false;
+                button.textContent = 'ログイン / 新規登録';
+                return;
+            }
+
+            const { data: signupData, error: signupError } = await db.auth.signUp({
+                email: authEmail,
+                password: password,
+            });
+
+            if (!signupError) {
+                // 新規登録成功
+                closeModal(document.getElementById('login-modal'));
+                showToast('新規登録が完了しました', 'success');
+                
+                // 新規ユーザーでも既存データがあるか確認
+                await migrateUserStamps(signupData.user.id);
+            } else {
+                // 新規登録も失敗 = 既存ユーザーのパスワード間違い
+                if (messageEl) messageEl.textContent = 'パスワードが正しくありません。';
+            }
         }
     } catch (err) {
-        if (messageEl) messageEl.textContent = 'ログインに失敗しました。';
-        console.error('Login error:', err);
+        if (messageEl) messageEl.textContent = '処理中にエラーが発生しました。';
+        console.error('Auth error:', err);
     } finally {
         button.disabled = false;
-        button.textContent = 'ログイン';
+        button.textContent = 'ログイン / 新規登録';
     }
 }
 
-
-async function handleRegister() {
-    const passwordInput = document.getElementById('register-password');
-    const confirmInput = document.getElementById('register-password-confirm');
-    const messageEl = document.getElementById('register-step-message');
-    const button = document.getElementById('register-btn');
-    
-    const password = passwordInput.value;
-    const confirmPassword = confirmInput.value;
-    if (messageEl) messageEl.textContent = '';
-
-    if (password !== confirmPassword) {
-        if (messageEl) messageEl.textContent = 'パスワードが一致しません。';
-        return;
-    }
-    if (!validatePassword(password)) {
-        if (messageEl) messageEl.textContent = 'パスワードが要件を満たしていません。';
-        return;
-    }
-    
-    button.disabled = true;
-    button.textContent = '登録中…';
-
+async function migrateUserStamps(userId) {
     try {
-        const { error } = await db.auth.signUp({ email: authEmail, password: password });
-        if (error) throw error;
-        
-        closeModal(document.getElementById('login-modal'));
-        showToast('登録完了しました。ログインしています。', 'success');
-    } catch(err) {
-        if (messageEl) messageEl.textContent = err.message || '登録に失敗しました。';
-        console.error('Registration error:', err);
-    } finally {
-        button.disabled = false;
-        button.textContent = '登録してログイン';
+        // まず現在のユーザーデータを確認
+        const { data: existingUser, error: fetchError } = await db
+            .from('users')
+            .select('*')
+            .eq('supabase_uid', userId)
+            .maybeSingle();
+
+        if (fetchError) {
+            console.error('Error fetching user:', fetchError);
+            return;
+        }
+
+        if (!existingUser) {
+            // ユーザーデータが存在しない場合、新規作成
+            const { error: insertError } = await db
+                .from('users')
+                .insert({
+                    supabase_uid: userId,
+                    stamp_count: 0,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+
+            if (insertError) {
+                console.error('Error creating user:', insertError);
+            }
+        }
+        // 既存ユーザーの場合はスタンプ数がそのまま保持される
+    } catch (error) {
+        console.error('Migration error:', error);
     }
 }
 
 async function handleForgotPassword() {
     const messageStepText = document.getElementById('message-text');
-    const passwordMessageEl = document.getElementById('password-step-message');
     
-    // パスワード入力画面のエラーメッセージをクリア
-    if(passwordMessageEl) passwordMessageEl.textContent = '';
-    
-    messageStepText.textContent = 'パスワード再設定（または新規設定）用のメールを送信しました。メールをご確認ください。';
+    messageStepText.textContent = 'パスワード再設定用のメールを送信しました。メールをご確認ください。';
     switchAuthStep('message-step');
 
     try {
         await db.auth.resetPasswordForEmail(authEmail, {
-            redirectTo: window.location.href.split('#')[0] // URLからハッシュを除外
+            redirectTo: window.location.href.split('#')[0]
         });
     } catch(err) {
         console.error('Forgot password error:', err);
@@ -409,11 +371,10 @@ function setupStaticEventListeners() {
   });
   
   document.getElementById('email-next-btn')?.addEventListener('click', handleEmailNext);
-  document.getElementById('login-btn')?.addEventListener('click', handleLogin);
-  document.getElementById('register-btn')?.addEventListener('click', handleRegister);
+  document.getElementById('unified-login-btn')?.addEventListener('click', handleUnifiedLogin);
   document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
   
-  document.getElementById('register-password')?.addEventListener('input', (e) => {
+  document.getElementById('unified-password')?.addEventListener('input', (e) => {
       validatePassword(e.target.value);
   });
 
