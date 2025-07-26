@@ -7,26 +7,6 @@ const db = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k'
 );
 
-
-/****************************************************
- * 2) OneSignal 初期化（SDK v16）
- ****************************************************/
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-window.OneSignalDeferred.push(async function (OneSignal) {
-  await OneSignal.init({
-    appId: "8e1dc10e-1525-4db3-9036-dd99f1552711",
-    serviceWorkerPath: "/Route227/service-worker.js",
-    serviceWorkerParam: { scope: "/Route227/" },
-
-    // 自動登録を防ぐ
-    allowLocalhostAsSecureOrigin: true
-  });
-  
-  // 初期化完了フラグを設定
-  window.OneSignalInitialized = true;
-});
-
-
 /* 2) グローバル変数 */
 let globalUID = null;
 let html5QrCode = null;
@@ -38,6 +18,7 @@ let isLoadingMore = false;
 let isInitialAuthCheckDone = false;
 let imageObserver = null;
 const pendingActions = [];
+let authEmail = ''; // 認証フローで使うメールアドレスを保持
 
 const appData = {
   qrString: "ROUTE227_STAMP_2025"
@@ -49,7 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setupOfflineDetection();
   setupImageLazyLoading();
 
+  // パスワードリセット/設定フローの処理
   db.auth.onAuthStateChange(async (event, session) => {
+    // ユーザーがパスワードを更新した場合の処理
+    if (event === "PASSWORD_RECOVERY") {
+      const modal = document.getElementById('login-modal');
+      switchAuthStep('message-step');
+      document.getElementById('message-text').textContent = 'パスワードを更新しました。新しいパスワードでログインしてください。';
+      openModal(modal);
+    }
+
     const previousUID = globalUID;
     globalUID = session?.user?.id || null;
     updateUserStatus(session);
@@ -71,8 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } finally {
         appLoader.classList.remove('active');
       }
-    }
-    else {
+    } else {
       if (event === 'SIGNED_IN' && !previousUID && globalUID) {
         const currentActiveSectionId = document.querySelector('.section.active')?.id || 'foodtruck-section';
         await showSection(currentActiveSectionId, false);
@@ -118,10 +107,8 @@ async function fetchWithRetry(fn, maxRetries = 3, delay = 1000) {
 function showToast(message, type = 'info', duration = 3000) {
   const toast = document.getElementById('toast-notification');
   if (!toast) return;
-
   toast.textContent = message;
   toast.className = `toast-${type} show`;
-
   clearTimeout(toast.hideTimeout);
   toast.hideTimeout = setTimeout(() => {
     toast.classList.remove('show');
@@ -140,7 +127,6 @@ function announceToScreenReader(message) {
 
 function setupOfflineDetection() {
   let isOffline = !navigator.onLine;
-
   window.addEventListener('online', () => {
     if (isOffline) {
       showToast('オンラインに復帰しました', 'success');
@@ -148,7 +134,6 @@ function setupOfflineDetection() {
       processPendingActions();
     }
   });
-
   window.addEventListener('offline', () => {
     isOffline = true;
     showToast('オフラインです。一部機能が制限されます。', 'warning');
@@ -167,10 +152,7 @@ function setupImageLazyLoading() {
           observer.unobserve(image);
         }
       });
-    }, {
-      rootMargin: '50px 0px',
-      threshold: 0.01
-    });
+    }, { rootMargin: '50px 0px', threshold: 0.01 });
   }
 }
 
@@ -185,7 +167,6 @@ function queueAction(action) {
 async function processPendingActions() {
   const stored = localStorage.getItem('pendingActions');
   if (!stored) return;
-
   const actions = JSON.parse(stored);
   for (const action of actions) {
     try {
@@ -195,7 +176,6 @@ async function processPendingActions() {
       console.error('Failed to process pending action:', error);
     }
   }
-
   localStorage.removeItem('pendingActions');
   pendingActions.length = 0;
 }
@@ -213,7 +193,168 @@ async function executeAction(action) {
   }
 }
 
-/* 5) ナビゲーションと表示切替 */
+/* 5) 認証関連の関数 */
+function switchAuthStep(stepId) {
+    const steps = ['email-step', 'password-step', 'register-step', 'message-step'];
+    steps.forEach(id => {
+        const el = document.getElementById(id);
+        if (id === stepId) {
+            el.classList.remove('hidden');
+        } else {
+            el.classList.add('hidden');
+        }
+    });
+}
+
+function validatePassword(password) {
+    const policies = {
+        length: password.length >= 8,
+        lowercase: /[a-z]/.test(password),
+        uppercase: /[A-Z]/.test(password),
+        number: /\d/.test(password)
+    };
+    // UIのポリシー表示を更新
+    document.getElementById('policy-length').classList.toggle('valid', policies.length);
+    document.getElementById('policy-lowercase').classList.toggle('valid', policies.lowercase);
+    document.getElementById('policy-uppercase').classList.toggle('valid', policies.uppercase);
+    document.getElementById('policy-number').classList.toggle('valid', policies.number);
+    
+    return Object.values(policies).every(Boolean);
+}
+
+async function handleEmailNext() {
+    const emailInput = document.getElementById('auth-email');
+    const messageEl = document.getElementById('email-step-message');
+    const button = document.getElementById('email-next-btn');
+
+    authEmail = emailInput.value.trim();
+    messageEl.textContent = '';
+    
+    if (!authEmail) {
+        messageEl.textContent = 'メールアドレスを入力してください。';
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = '確認中…';
+
+    try {
+        const { data: userExists, error } = await db.rpc('check_user_exists', { user_email: authEmail });
+        if (error) throw error;
+        
+        if (userExists) {
+            document.getElementById('password-email-display').textContent = authEmail;
+            switchAuthStep('password-step');
+        } else {
+            document.getElementById('register-email-display').textContent = authEmail;
+            switchAuthStep('register-step');
+        }
+    } catch (err) {
+        messageEl.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+        console.error('User check error:', err);
+    } finally {
+        button.disabled = false;
+        button.textContent = '次へ';
+    }
+}
+
+async function handleLogin() {
+    const passwordInput = document.getElementById('auth-password');
+    const messageEl = document.getElementById('password-step-message');
+    const button = document.getElementById('login-btn');
+    const password = passwordInput.value;
+    messageEl.textContent = '';
+
+    button.disabled = true;
+    button.textContent = 'ログイン中…';
+
+    try {
+        const { error } = await db.auth.signInWithPassword({
+            email: authEmail,
+            password: password,
+        });
+
+        if (error) {
+            // パスワードが設定されていない（OTPからの移行ユーザー）場合の可能性を考慮
+            if (error.message.includes('Invalid login credentials')) {
+                const messageStepText = document.getElementById('message-text');
+                messageStepText.innerHTML = 'アカウント保護のため、パスワードの設定をお願いします。<br>パスワード設定用のメールを送信しましたので、ご確認ください。';
+                switchAuthStep('message-step');
+                await db.auth.resetPasswordForEmail(authEmail, {
+                    redirectTo: window.location.origin + window.location.pathname
+                });
+            } else {
+                throw error;
+            }
+        } else {
+            closeModal(document.getElementById('login-modal'));
+            showToast('ログインしました', 'success');
+        }
+    } catch (err) {
+        messageEl.textContent = 'ログインに失敗しました。';
+        console.error('Login error:', err);
+    } finally {
+        button.disabled = false;
+        button.textContent = 'ログイン';
+    }
+}
+
+async function handleRegister() {
+    const passwordInput = document.getElementById('register-password');
+    const confirmInput = document.getElementById('register-password-confirm');
+    const messageEl = document.getElementById('register-step-message');
+    const button = document.getElementById('register-btn');
+    
+    const password = passwordInput.value;
+    const confirmPassword = confirmInput.value;
+    messageEl.textContent = '';
+
+    if (password !== confirmPassword) {
+        messageEl.textContent = 'パスワードが一致しません。';
+        return;
+    }
+
+    if (!validatePassword(password)) {
+        messageEl.textContent = 'パスワードが要件を満たしていません。';
+        return;
+    }
+    
+    button.disabled = true;
+    button.textContent = '登録中…';
+
+    try {
+        const { error } = await db.auth.signUp({
+            email: authEmail,
+            password: password,
+        });
+        if (error) throw error;
+        
+        closeModal(document.getElementById('login-modal'));
+        showToast('登録完了しました。ログインしています。', 'success');
+    } catch(err) {
+        messageEl.textContent = err.message || '登録に失敗しました。';
+        console.error('Registration error:', err);
+    } finally {
+        button.disabled = false;
+        button.textContent = '登録してログイン';
+    }
+}
+
+async function handleForgotPassword() {
+    const messageStepText = document.getElementById('message-text');
+    messageStepText.textContent = 'パスワード再設定用のメールを送信しました。メールをご確認ください。';
+    switchAuthStep('message-step');
+    try {
+        await db.auth.resetPasswordForEmail(authEmail, {
+            redirectTo: window.location.origin + window.location.pathname
+        });
+    } catch(err) {
+        console.error('Forgot password error:', err);
+        messageStepText.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+    }
+}
+
+/* 6) ナビゲーションと表示切替 */
 function setupStaticEventListeners() {
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -228,84 +369,34 @@ function setupStaticEventListeners() {
     currentPage++;
     renderArticles(currentCategory, false);
   });
-
-  const emailForm = document.getElementById('email-form');
-  const otpForm = document.getElementById('otp-form');
-  const emailInput = document.getElementById('email');
-  const otpCodeInput = document.getElementById('otp-code');
-  const emailMessage = document.getElementById('email-message');
-  const otpMessage = document.getElementById('otp-message');
-  const otpEmailDisplay = document.getElementById('otp-email-display');
-  const changeEmailBtn = document.getElementById('change-email-btn');
-
-  emailForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = emailInput.value.trim();
-    const submitButton = emailForm.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = '送信中…';
-    emailMessage.textContent = '';
-
-    try {
-      const { error } = await fetchWithRetry(() =>
-        db.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } })
-      );
-      if (error) throw error;
-
-      emailMessage.textContent = '✅ メールを確認してください！';
-      showToast('認証メールを送信しました', 'success');
-      otpEmailDisplay.textContent = email;
-      emailForm.classList.add('hidden');
-      otpForm.classList.remove('hidden');
-    } catch (err) {
-      emailMessage.textContent = `❌ ${err.message || 'エラーが発生しました。'}`;
-      showToast('メール送信に失敗しました', 'error');
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = '認証コードを送信';
-    }
-  });
-
-  otpForm?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = otpEmailDisplay.textContent;
-    const token = otpCodeInput.value.trim();
-    const submitButton = otpForm.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = '認証中…';
-    otpMessage.textContent = '';
-
-    try {
-      const { data, error } = await fetchWithRetry(() =>
-        db.auth.verifyOtp({ email: email, token: token, type: 'email' })
-      );
-      if (error) throw error;
-
-      showToast('ログインしました', 'success');
-      closeModal(document.getElementById('login-modal'));
-    } catch (err) {
-      otpMessage.textContent = `❌ ${err.message || '認証に失敗しました。'}`;
-      showToast('認証コードが正しくありません', 'error');
-    } finally {
-      submitButton.disabled = false;
-      submitButton.textContent = '認証する';
-    }
-  });
-
-  changeEmailBtn?.addEventListener('click', () => {
-    otpForm.classList.add('hidden');
-    emailForm.classList.remove('hidden');
-    emailMessage.textContent = '';
-    otpMessage.textContent = '';
+  
+  // 認証モーダルのイベントリスナー
+  document.getElementById('email-next-btn')?.addEventListener('click', handleEmailNext);
+  document.getElementById('login-btn')?.addEventListener('click', handleLogin);
+  document.getElementById('register-btn')?.addEventListener('click', handleRegister);
+  document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
+  
+  // パスワードポリシーのリアルタイムチェック
+  document.getElementById('register-password')?.addEventListener('input', (e) => {
+      validatePassword(e.target.value);
   });
 
   document.body.addEventListener('click', (e) => {
     if (e.target.matches('.close-modal') || e.target.matches('.close-notification')) {
       const modal = e.target.closest('.modal');
-      if (modal) closeModal(modal);
+      if (modal) {
+          closeModal(modal);
+          // モーダルを閉じたら認証ステップを最初に戻す
+          if(modal.id === 'login-modal') {
+              switchAuthStep('email-step');
+          }
+      }
     }
     if (e.target.matches('.modal')) {
       closeModal(e.target);
+      if(e.target.id === 'login-modal') {
+        switchAuthStep('email-step');
+      }
     }
   });
 
@@ -314,6 +405,9 @@ function setupStaticEventListeners() {
       const activeModal = document.querySelector('.modal.active');
       if (activeModal) {
         closeModal(activeModal);
+        if(activeModal.id === 'login-modal') {
+          switchAuthStep('email-step');
+        }
       }
     }
   });
@@ -362,7 +456,7 @@ function updateUserStatus(session) {
   }
 }
 
-/* 6) ページ別初期化ロジック */
+/* 7) ページ別初期化ロジック */
 async function initializeFeedPage() {
   const categoryTabs = document.getElementById('category-tabs');
   if (categoryTabs && !categoryTabs.dataset.listenerAttached) {
@@ -411,7 +505,7 @@ function initializeFoodtruckPage() {
   })();
 }
 
-/* 7) ヘルパー関数群 */
+/* 8) ヘルパー関数群 */
 function setupFoodtruckActionListeners() {
   const foodtruckSection = document.getElementById('foodtruck-section');
   if (!foodtruckSection || foodtruckSection.dataset.listenersAttached === 'true') {
@@ -942,8 +1036,3 @@ async function displayRewardHistory() {
 const srOnlyStyle = document.createElement('style');
 srOnlyStyle.textContent = `.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`;
 document.head.appendChild(srOnlyStyle);
-
-// ベルマークを非表示にする
-const hideNotificationButton = document.createElement('style');
-hideNotificationButton.textContent = `#notification-button-container { display: none !important; }`;
-document.head.appendChild(hideNotificationButton);
