@@ -20,6 +20,9 @@ let imageObserver = null;
 const pendingActions = [];
 let authEmail = ''; // 認証フローで使うメールアドレスを保持
 let authFlowState = ''; // 'login' or 'signup'
+// ▼▼▼ ポップアップのキーを更新。これにより全ユーザーに再度表示される ▼▼▼
+const WELCOME_POPUP_KEY = 'welcomePopupShown_v2'; // ポップアップ表示記録用のキー
+// ▲▲▲ ポップアップのキーを更新 ▲▲▲
 
 const appData = {
   qrString: "ROUTE227_STAMP_2025"
@@ -57,11 +60,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const validSections = ['feed-section', 'rank-section', 'foodtruck-section'];
         const urlHash = window.location.hash.substring(1);
 
-        // 1. URLのハッシュを最優先で確認
         if (urlHash && validSections.includes(urlHash)) {
           initialSection = urlHash;
         } else {
-          // 2. ハッシュがなければ、前回表示したセッション情報を確認
           const lastSection = sessionStorage.getItem('activeSection');
           if (lastSection) {
             initialSection = lastSection;
@@ -69,11 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         await showSection(initialSection, true);
-        handleUrlHash(); // 記事のハッシュ(#article-...)も処理するために必要
+        handleUrlHash();
+
+        // 注意書きポップアップの表示チェック
+        checkAndShowWelcomePopup();
 
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
-        await showSection('feed-section', true); // エラー時はフォールバック
+        await showSection('feed-section', true);
       }
 
     } else {
@@ -95,6 +99,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 /* 4) ユーティリティ関数 */
+
+/**
+ * 初回訪問時に注意書きのポップアップを表示する
+ */
+function checkAndShowWelcomePopup() {
+    const popupShown = localStorage.getItem(WELCOME_POPUP_KEY);
+    if (popupShown !== 'true') {
+        const welcomeModal = document.getElementById('welcome-modal');
+        if (welcomeModal) {
+            setTimeout(() => {
+                openModal(welcomeModal);
+            }, 500);
+        }
+    }
+}
+
 function escapeHtml(unsafe) {
   if (!unsafe) return '';
   return unsafe
@@ -364,6 +384,22 @@ function setupStaticEventListeners() {
         renderArticles(currentCategory, false);
     });
 
+    // ▼▼▼ 新規登録フロー開始ボタンのリスナーを追加 ▼▼▼
+    document.getElementById('welcome-modal-signup-btn')?.addEventListener('click', () => {
+        // ポップアップを次回から表示しないように記録
+        localStorage.setItem(WELCOME_POPUP_KEY, 'true');
+        // 注意書きモーダルを閉じる
+        closeModal(document.getElementById('welcome-modal'));
+        
+        // 新規登録フローを開始
+        authFlowState = 'signup';
+        const loginModal = document.getElementById('login-modal');
+        if (loginModal) {
+            openModal(loginModal);
+            switchAuthStep('auth-email-step');
+        }
+    });
+
     document.getElementById('start-login-btn')?.addEventListener('click', () => {
         authFlowState = 'login';
         switchAuthStep('auth-email-step');
@@ -433,7 +469,13 @@ function setupStaticEventListeners() {
         const modal = e.target.closest('.modal');
         if (e.target.matches('.close-modal, .modal-ok-btn') || e.target === modal) {
             if (modal) {
+                // 注意書きモーダルが閉じられたら記録を残す
+                if (modal.id === 'welcome-modal') {
+                    localStorage.setItem(WELCOME_POPUP_KEY, 'true');
+                }
+
                 closeModal(modal);
+
                 if (modal.id === 'login-modal') {
                     switchAuthStep('auth-initial-step');
                     authEmail = '';
@@ -451,7 +493,13 @@ function setupStaticEventListeners() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             const activeModal = document.querySelector('.modal.active');
-            if (activeModal) closeModal(activeModal);
+            if (activeModal) {
+                 // 注意書きモーダルが閉じられたら記録を残す
+                if (activeModal.id === 'welcome-modal') {
+                    localStorage.setItem(WELCOME_POPUP_KEY, 'true');
+                }
+                closeModal(activeModal);
+            }
         }
     });
 }
@@ -531,8 +579,9 @@ function initializeFoodtruckPage() {
   if (!globalUID) {
     const loginModal = document.getElementById('login-modal');
     if(loginModal) {
-        switchAuthStep('auth-initial-step'); 
-        openModal(loginModal);
+        // ログインモーダルは自動で開かないように変更（ポップアップから誘導するため）
+        // switchAuthStep('auth-initial-step'); 
+        // openModal(loginModal);
     }
     updateStampDisplay(0);
     updateRewardButtons(0);
@@ -672,7 +721,8 @@ function showNotification(options) {
 
 async function addStamp() {
   if (!globalUID) {
-    openModal(document.getElementById('login-modal'));
+    // ログインモーダルを自動で開かず、ポップアップからの誘導を待つ
+    showToast('スタンプ機能の利用にはログインが必要です。', 'info');
     return;
   }
   
@@ -732,6 +782,12 @@ async function redeemReward(type) {
 }
 
 function initQRScanner() {
+    if (!globalUID) {
+      showToast('QRコードのスキャンにはログインが必要です。', 'info');
+      document.getElementById('welcome-modal-signup-btn').click(); // 新規登録フローを開始
+      return;
+    }
+
   const qrModal = document.getElementById('qr-modal');
   openModal(qrModal, 'scan-qr');
   let isProcessing = false;
