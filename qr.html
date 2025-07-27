@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route 227 へようこそ</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #FDFBF7;
+            text-align: center;
+        }
+        .container {
+            padding: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #ee7501;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #d86a01;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Route 227</h1>
+        <p>アプリを開いています...</p>
+        <a href="/Route227/" class="btn">アプリを開く</a>
+    </div>
+
+    <script>
+        // ページ読み込みから1秒後に自動でアプリのページに移動します。
+        // これにより、ユーザーがボタンを押さなくてもページが遷移します。
+        setTimeout(() => {
+            window.location.href = '/Route227/';
+        }, 1000);
+    </script>
+</body>
+</html>
