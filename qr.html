@@ -3,51 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route 227 へようこそ</title>
+    <title>ブラウザで開いています...</title>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             background-color: #FDFBF7;
+            color: #3D352E;
             text-align: center;
         }
         .container {
             padding: 20px;
         }
-        .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            margin-top: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            background-color: #ee7501;
-            border-radius: 12px;
-            text-decoration: none;
-            transition: background-color 0.2s;
-        }
-        .btn:hover {
-            background-color: #d86a01;
-        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Route 227</h1>
-        <p>アプリを開いています...</p>
-        <a href="/Route227/" class="btn">アプリを開く</a>
+        <h1>ブラウザでアプリを開いています</h1>
+        <p>自動的に移動しない場合は、しばらくしてからページを再読み込みしてください。</p>
     </div>
 
     <script>
-        // ページ読み込みから1秒後に自動でアプリのページに移動します。
-        // これにより、ユーザーがボタンを押さなくてもページが遷移します。
-        setTimeout(() => {
-            window.location.href = '/Route227/';
-        }, 1000);
+        // このページが開かれたら、すぐにアプリのトップページへ移動します。
+        // これにより、利用者は経由ページを意識することなくブラウザでアプリを開けます。
+        window.location.href = 'index.html';
     </script>
 </body>
 </html>
