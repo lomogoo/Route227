@@ -52,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
           appLoader.classList.remove('active');
       }
 
-      // ▼▼ ここからロジックを修正 ▼▼
       try {
         let initialSection = 'feed-section'; // デフォルト
         const validSections = ['feed-section', 'rank-section', 'foodtruck-section'];
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("[INIT] Critical error during initial load:", error);
         await showSection('feed-section', true); // エラー時はフォールバック
       }
-      // ▲▲ ここまで修正 ▲▲
 
     } else {
       if (event === 'SIGNED_IN' && !previousUID && globalUID) {
@@ -348,12 +346,14 @@ async function handleForgotPassword() {
 function setupStaticEventListeners() {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
-            // hrefが'#'で始まる場合のみセクション切り替えロジックを実行
-            if (e.currentTarget.getAttribute('href').startsWith('#')) {
-                e.preventDefault(); // ページの再読み込みを防ぐ
+            const href = e.currentTarget.getAttribute('href');
+            if (href && href.startsWith('#')) {
+                e.preventDefault(); 
                 const sectionId = e.currentTarget.dataset.section;
-                sessionStorage.setItem('activeSection', sectionId);
-                showSection(sectionId);
+                if(sectionId) {
+                    sessionStorage.setItem('activeSection', sectionId);
+                    showSection(sectionId);
+                }
             }
         });
     });
@@ -431,11 +431,9 @@ function setupStaticEventListeners() {
     // --- 全てのモーダルを閉じるための共通リスナー ---
     document.body.addEventListener('click', (e) => {
         const modal = e.target.closest('.modal');
-        // .close-modal, .modal-ok-btn, またはモーダルの背景クリックで閉じる
         if (e.target.matches('.close-modal, .modal-ok-btn') || e.target === modal) {
             if (modal) {
                 closeModal(modal);
-                // 認証モーダルを閉じた場合は、状態をリセット
                 if (modal.id === 'login-modal') {
                     switchAuthStep('auth-initial-step');
                     authEmail = '';
@@ -545,9 +543,10 @@ function initializeFoodtruckPage() {
 
   (async () => {
     try {
-      const stampCount = await fetchWithRetry(() => fetchUserRow(globalUID));
-      updateStampDisplay(stampCount);
-      updateRewardButtons(stampCount);
+      const { data: user, error } = await db.from('users').select('stamp_count').eq('supabase_uid', globalUID).single();
+      if (error) throw error;
+      updateStampDisplay(user.stamp_count);
+      updateRewardButtons(user.stamp_count);
     } catch (error) {
       console.error("Failed to fetch stamp count in background:", error);
       showToast('スタンプ情報の取得に失敗しました', 'error');
@@ -609,17 +608,6 @@ function trapFocus(modal) {
   setTimeout(() => firstFocusable?.focus(), 100);
 }
 
-async function fetchUserRow(uid) {
-  try {
-    const { data, error } = await db.from('users').select('stamp_count').eq('supabase_uid', uid).maybeSingle();
-    if (error) throw error;
-    return data?.stamp_count || 0;
-  } catch (err) {
-    showNotification({ title: 'データベースエラー', msg: 'ユーザー情報の取得に失敗しました。' });
-    throw err;
-  }
-}
-
 async function updateStampCount(uid, newCount) {
   try {
     const { data, error } = await db.from('users').update({ stamp_count: newCount, updated_at: new Date().toISOString() }).eq('supabase_uid', uid).select().single();
@@ -671,7 +659,6 @@ function updateRewardButtons(count) {
   curryItem?.classList.toggle('available', count >= 6);
 }
 
-// 通知表示関数 (刷新)
 function showNotification(options) {
   const { title, msg, icon = 'ℹ️' } = options;
   const modal = document.getElementById('notification-modal');
@@ -688,29 +675,25 @@ async function addStamp() {
     openModal(document.getElementById('login-modal'));
     return;
   }
-  if (!navigator.onLine) {
-    queueAction({ type: 'ADD_STAMP' });
-    showToast('オフラインです。オンライン復帰後にスタンプを追加します。', 'warning');
-    return;
-  }
+  
   try {
-    const count = await fetchWithRetry(() => fetchUserRow(globalUID));
-    if (count >= 6) {
-      showNotification({ title: 'コンプリート！', msg: 'スタンプが6個たまりました！<br>特典と交換してください。', icon: '🎊' });
-      return;
-    }
-    const newCount = await fetchWithRetry(() => updateStampCount(globalUID, count + 1));
-    updateStampDisplay(newCount);
-    updateRewardButtons(newCount);
+    const { data, error } = await db.rpc('grant_stamp_and_exp');
+    if (error) throw error;
 
-    if (newCount === 3) showNotification({ title: '特典解除！', msg: 'コーヒー1杯と交換できます！<br>あと3スタンプでカレー1杯無料！', icon: '🎉' });
-    else if (newCount === 6) showNotification({ title: 'コンプリート！', msg: '全てのスタンプを集めました！<br>カレー1杯と交換できます！', icon: '🎊' });
-    else showNotification({ title: 'スタンプ獲得', msg: `現在 ${newCount} 個（あと${6 - newCount}個でカレー無料）`, icon: '👍' });
-    
-    announceToScreenReader(`スタンプを獲得しました。現在${newCount}個です。`);
+    if (data.success) {
+      const { data: user } = await db.from('users').select('stamp_count, rank, exp').eq('supabase_uid', globalUID).single();
+      updateStampDisplay(user.stamp_count);
+      updateRewardButtons(user.stamp_count);
+      
+      showNotification({ title: 'スタンプ＆EXP獲得！', msg: 'スタンプ1個と10 EXPを獲得しました！', icon: '✨' });
+      
+    } else if (data.message === 'stamps_full') {
+      showNotification({ title: 'コンプリート！', msg: 'スタンプが6個たまりました！<br>特典と交換してください。', icon: '🎊' });
+    }
+
   } catch (error) {
-    console.error('Stamp addition failed:', error);
-    showNotification({ title: 'エラー', msg: 'スタンプの追加に失敗しました。<br>インターネット接続を確認してください。', icon: '⚠️' });
+    console.error('スタンプ・EXPの獲得に失敗:', error);
+    showNotification({ title: 'エラー', msg: '処理に失敗しました。<br>インターネット接続を確認してください。', icon: '⚠️' });
   }
 }
 
@@ -722,7 +705,10 @@ async function redeemReward(type) {
     return;
   }
   try {
-    const count = await fetchWithRetry(() => fetchUserRow(globalUID));
+    const { data: user } = await db.from('users').select('stamp_count').eq('supabase_uid', globalUID).single();
+    if (!user) throw new Error("User not found");
+
+    const count = user.stamp_count;
     const required = type === 'coffee' ? 3 : 6;
     const rewardName = type === 'coffee' ? 'コーヒー1杯' : 'カレー1杯';
     const icon = type === 'coffee' ? '☕️' : '🍛';
@@ -730,7 +716,7 @@ async function redeemReward(type) {
     if (count < required) return;
     if (!confirm(`${rewardName}と交換しますか？\n（スタンプが${required}個消費されます）`)) return;
 
-    const newCount = await fetchWithRetry(() => updateStampCount(globalUID, count - required));
+    const newCount = await updateStampCount(globalUID, count - required);
     await db.from('reward_history').insert({ user_id: globalUID, reward_name: rewardName, points_consumed: required });
     
     updateStampDisplay(newCount);
