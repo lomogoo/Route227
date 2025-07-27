@@ -52,14 +52,32 @@ document.addEventListener('DOMContentLoaded', () => {
           appLoader.classList.remove('active');
       }
 
+      // ▼▼ ここからロジックを修正 ▼▼
       try {
-        const lastSection = sessionStorage.getItem('activeSection') || 'feed-section';
-        await showSection(lastSection, true);
-        handleUrlHash();
+        let initialSection = 'feed-section'; // デフォルト
+        const validSections = ['feed-section', 'rank-section', 'foodtruck-section'];
+        const urlHash = window.location.hash.substring(1);
+
+        // 1. URLのハッシュを最優先で確認
+        if (urlHash && validSections.includes(urlHash)) {
+          initialSection = urlHash;
+        } else {
+          // 2. ハッシュがなければ、前回表示したセッション情報を確認
+          const lastSection = sessionStorage.getItem('activeSection');
+          if (lastSection) {
+            initialSection = lastSection;
+          }
+        }
+        
+        await showSection(initialSection, true);
+        handleUrlHash(); // 記事のハッシュ(#article-...)も処理するために必要
+
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
-        await showSection('feed-section', true);
+        await showSection('feed-section', true); // エラー時はフォールバック
       }
+      // ▲▲ ここまで修正 ▲▲
+
     } else {
       if (event === 'SIGNED_IN' && !previousUID && globalUID) {
         const currentActiveSectionId = document.querySelector('.section.active')?.id || 'foodtruck-section';
@@ -330,9 +348,13 @@ async function handleForgotPassword() {
 function setupStaticEventListeners() {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => {
-            const sectionId = e.currentTarget.dataset.section;
-            sessionStorage.setItem('activeSection', sectionId);
-            showSection(sectionId);
+            // hrefが'#'で始まる場合のみセクション切り替えロジックを実行
+            if (e.currentTarget.getAttribute('href').startsWith('#')) {
+                e.preventDefault(); // ページの再読み込みを防ぐ
+                const sectionId = e.currentTarget.dataset.section;
+                sessionStorage.setItem('activeSection', sectionId);
+                showSection(sectionId);
+            }
         });
     });
 
