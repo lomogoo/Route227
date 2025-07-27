@@ -74,7 +74,7 @@ body {
 #app-root {
   max-width: 640px;
   margin: 0 auto;
-  background-color: var(--color-surface);
+  background-color: transparent;
   min-height: 100vh;
   box-shadow: var(--shadow-md);
 }
