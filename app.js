@@ -20,9 +20,7 @@ let imageObserver = null;
 const pendingActions = [];
 let authEmail = ''; // 認証フローで使うメールアドレスを保持
 let authFlowState = ''; // 'login' or 'signup'
-// ▼▼▼ ポップアップのキーを更新。これにより全ユーザーに再度表示される ▼▼▼
 const WELCOME_POPUP_KEY = 'welcomePopupShown_v2'; // ポップアップ表示記録用のキー
-// ▲▲▲ ポップアップのキーを更新 ▲▲▲
 
 const appData = {
   qrString: "ROUTE227_STAMP_2025"
@@ -72,8 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
         await showSection(initialSection, true);
         handleUrlHash();
 
-        // 注意書きポップアップの表示チェック
+        // ポップアップ表示のチェックを実行
         checkAndShowWelcomePopup();
+        checkAndShowPwaMigrationPopup(); // PWA利用者向けポップアップのチェックを追加
 
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
@@ -99,6 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 /* 4) ユーティリティ関数 */
+
+/**
+ * PWAモード（スタンドアロンモード）で開かれているか確認し、
+ * 該当する場合に移行を促すポップアップを表示する
+ */
+function checkAndShowPwaMigrationPopup() {
+    // 'display-mode: standalone' は、アプリがPWAとして独立したウィンドウで
+    // 実行されている状態を示します。
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        const migrationModal = document.getElementById('pwa-migration-modal');
+        if (migrationModal) {
+            // 既存のモーダル表示関数を再利用します。
+            openModal(migrationModal);
+        }
+    }
+}
 
 /**
  * 初回訪問時に注意書きのポップアップを表示する
@@ -384,14 +399,10 @@ function setupStaticEventListeners() {
         renderArticles(currentCategory, false);
     });
 
-    // ▼▼▼ 新規登録フロー開始ボタンのリスナーを追加 ▼▼▼
     document.getElementById('welcome-modal-signup-btn')?.addEventListener('click', () => {
-        // ポップアップを次回から表示しないように記録
         localStorage.setItem(WELCOME_POPUP_KEY, 'true');
-        // 注意書きモーダルを閉じる
         closeModal(document.getElementById('welcome-modal'));
         
-        // 新規登録フローを開始
         authFlowState = 'signup';
         const loginModal = document.getElementById('login-modal');
         if (loginModal) {
@@ -464,12 +475,10 @@ function setupStaticEventListeners() {
     document.getElementById('forgot-password-link')?.addEventListener('click', handleForgotPassword);
     document.getElementById('signup-password')?.addEventListener('input', (e) => validatePassword(e.target.value));
 
-    // --- 全てのモーダルを閉じるための共通リスナー ---
     document.body.addEventListener('click', (e) => {
         const modal = e.target.closest('.modal');
         if (e.target.matches('.close-modal, .modal-ok-btn') || e.target === modal) {
             if (modal) {
-                // 注意書きモーダルが閉じられたら記録を残す
                 if (modal.id === 'welcome-modal') {
                     localStorage.setItem(WELCOME_POPUP_KEY, 'true');
                 }
@@ -494,7 +503,6 @@ function setupStaticEventListeners() {
         if (e.key === 'Escape') {
             const activeModal = document.querySelector('.modal.active');
             if (activeModal) {
-                 // 注意書きモーダルが閉じられたら記録を残す
                 if (activeModal.id === 'welcome-modal') {
                     localStorage.setItem(WELCOME_POPUP_KEY, 'true');
                 }
@@ -577,12 +585,6 @@ async function initializeFeedPage() {
 function initializeFoodtruckPage() {
   updateFoodtruckInfo();
   if (!globalUID) {
-    const loginModal = document.getElementById('login-modal');
-    if(loginModal) {
-        // ログインモーダルは自動で開かないように変更（ポップアップから誘導するため）
-        // switchAuthStep('auth-initial-step'); 
-        // openModal(loginModal);
-    }
     updateStampDisplay(0);
     updateRewardButtons(0);
     return;
@@ -721,7 +723,6 @@ function showNotification(options) {
 
 async function addStamp() {
   if (!globalUID) {
-    // ログインモーダルを自動で開かず、ポップアップからの誘導を待つ
     showToast('スタンプ機能の利用にはログインが必要です。', 'info');
     return;
   }
@@ -784,7 +785,7 @@ async function redeemReward(type) {
 function initQRScanner() {
     if (!globalUID) {
       showToast('QRコードのスキャンにはログインが必要です。', 'info');
-      document.getElementById('welcome-modal-signup-btn').click(); // 新規登録フローを開始
+      document.getElementById('welcome-modal-signup-btn').click();
       return;
     }
 
@@ -1007,7 +1008,6 @@ async function displayRewardHistory() {
           </li>`;
       }).join('');
       
-      // イベントリスナーを再設定
       document.querySelectorAll('.history-item').forEach(item => {
         item.addEventListener('click', showHistoryDetail);
         item.addEventListener('keydown', (e) => {
