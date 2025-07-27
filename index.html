@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -219,7 +218,6 @@
   
 </footer>
 
-    <!-- QRコードスキャナ用モーダル -->
     <div class="modal" id="qr-modal">
       <div class="modal-content">
         <div class="modal-header"><h3>QRコードをスキャン</h3><button class="close-modal">&times;</button></div>
@@ -227,7 +225,6 @@
       </div>
     </div>
 
-    <!-- 通知用モーダル (デザイン刷新) -->
     <div class="modal" id="notification-modal">
       <div class="modal-content notification-content">
         <button class="close-modal top-right-close">&times;</button>
@@ -240,7 +237,6 @@
       </div>
     </div>
 
-    <!-- 交換履歴詳細モーダル (新規追加) -->
     <div class="modal" id="history-detail-modal">
         <div class="modal-content history-detail-content">
             <button class="close-modal top-right-close">&times;</button>
@@ -256,7 +252,6 @@
         </div>
     </div>
 
-    <!-- ログイン/新規登録モーダル (デザイン刷新) -->
     <div class="modal" id="login-modal">
       <div class="modal-content">
         <div class="modal-header">
@@ -265,7 +260,6 @@
         </div>
         <div class="modal-body">
     
-          <!-- ステップ1: 初期選択画面 -->
           <div id="auth-initial-step">
             <p>ログインまたはアカウントを新規登録します。</p>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
@@ -274,7 +268,6 @@
             </div>
           </div>
     
-          <!-- ステップ2: メールアドレス入力画面 (共有) -->
           <div id="auth-email-step" class="hidden">
             <p id="email-step-message" style="margin-top: 12px;"></p>
             <input type="email" id="auth-email" placeholder="メールアドレス" required autocomplete="email" />
@@ -283,7 +276,6 @@
             <button class="btn-link auth-back-btn" data-target="auth-initial-step">← 戻る</button>
           </div>
           
-          <!-- ステップ3: ログイン用パスワード入力 -->
           <div id="auth-login-password-step" class="hidden">
             <p style="margin-top: 12px;">パスワードを入力してください。</p>
             <p><strong id="login-email-display"></strong></p>
@@ -294,7 +286,6 @@
             <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
           </div>
     
-          <!-- ステップ3: 新規登録用パスワード設定 -->
           <div id="auth-signup-password-step" class="hidden">
             <p style="margin-top: 12px;">パスワードを設定してください。</p>
             <p><strong id="signup-email-display"></strong></p>
@@ -329,6 +320,26 @@
         </div>
       </div>
     </div>
-  </div>
+
+    <div class="modal" id="welcome-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>これまでご利用の皆様へ</h3>
+          <button class="close-modal" aria-label="閉じる">&times;</button>
+        </div>
+        <div class="modal-body" style="text-align: left;">
+          <p>アプリのリニューアルに伴い、再度アカウントの登録をお願いしております。</p>
+          <p>お手数ですが、下記のボタンから、<strong>これまでご利用されていたメールアドレスで</strong>再度ご登録ください。</p>
+          <p style="font-size: 13px; color: #6c757d; margin-top: 16px;">
+            ※同じメールアドレスでご登録いただくことで、これまでのスタンプ数が正常に引き継がれます。
+          </p>
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
+            <button id="welcome-modal-signup-btn" class="btn btn-primary btn-full">新規登録はこちら</button>
+            <button class="btn btn-secondary btn-full modal-ok-btn">後で登録する</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
 </body>
 </html>
