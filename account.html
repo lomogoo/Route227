@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>アカウント情報 - Route227 App</title>
+  <meta name="theme-color" content="#F2CC8F">
+  
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#F2CC8F" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css?v=1.0.1"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js?v=1.0.1" defer></script>
+  
+  <style>
+    /* アカウント情報リスト用の簡易スタイル */
+    .account-info-list {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .account-info-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 8px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .account-info-item:last-child {
+      border-bottom: none;
+    }
+    .account-info-label {
+      font-size: 14px;
+      color: #6c757d;
+    }
+    .account-info-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rank-icon {
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-root">
+    <header class="app-header">
+      <div class="container header-container">
+        <div class="logo">
+          <img src="assets/truck.png" alt="Route 227 トラックロゴ" class="logo-icon">
+          <span class="logo-text">Route 227</span>
+        </div>
+        
+        <div class="header-actions">
+          <a href="https://www.instagram.com/route227/" target="_blank" rel="noopener noreferrer" class="header-icon-link" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          <div id="user-status">
+            </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <section id="account-section" class="section active">
+        <div class="container">
+          <div class="card">
+            <div class="card-header">
+              <h2>アカウント情報</h2>
+            </div>
+            <div class="card-body">
+              <ul class="account-info-list">
+                <li class="account-info-item">
+                  <span class="account-info-label">登録メールアドレス</span>
+                  <span id="account-email" class="account-info-value">
+                    loading...
+                  </span>
+                </li>
+                <li class="account-info-item">
+                  <span class="account-info-label">累計ポイント数</span>
+                  <span id="account-points" class="account-info-value">
+                    --- pt
+                  </span>
+                </li>
+                <li class="account-info-item">
+                  <span class="account-info-label">現在のランク</span>
+                  <span id="account-rank" class="account-info-value">
+                    <span class="rank-icon">🥉</span>
+                    <span>ブロンズ</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+            <div class="card-footer" style="display: flex; flex-direction: column; gap: 12px;">
+              <a href="help.html" class="btn btn-secondary btn-full">
+                使い方・ヘルプ
+              </a>
+              <button id="account-logout-btn" class="btn btn-primary btn-full">
+                ログアウト
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    
+    <footer class="footer-nav">
+      <a href="index.html#feed-section" class="nav-link" data-section="feed-section">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span>フィード</span>
+      </a>
+    
+      <a href="index.html#foodtruck-section" class="nav-link" data-section="foodtruck-section">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stamp-icon lucide-stamp"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>
+        <span>スタンプ</span>
+      </a>
+    </footer>
+  </div>
+</body>
+</html>
