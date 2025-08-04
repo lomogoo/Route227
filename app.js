@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ポップアップ表示のチェックを実行
         checkAndShowWelcomePopup();
-        checkAndShowPwaMigrationPopup(); // PWA利用者向けポップアップのチェックを追加
 
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
@@ -98,22 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 /* 4) ユーティリティ関数 */
-
-/**
- * PWAモード（スタンドアロンモード）で開かれているか確認し、
- * 該当する場合に移行を促すポップアップを表示する
- */
-function checkAndShowPwaMigrationPopup() {
-    // 'display-mode: standalone' は、アプリがPWAとして独立したウィンドウで
-    // 実行されている状態を示します。
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        const migrationModal = document.getElementById('pwa-migration-modal');
-        if (migrationModal) {
-            // 既存のモーダル表示関数を再利用します。
-            openModal(migrationModal);
-        }
-    }
-}
 
 /**
  * 初回訪問時に注意書きのポップアップを表示する
@@ -990,7 +973,7 @@ async function displayRewardHistory() {
       historyList.innerHTML = data.map(item => {
         const date = new Date(item.exchanged_at);
         const formattedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-        const icon = item.reward_name.includes('コーヒー') ? '☕️' : '🍛';
+        const icon = item.reward_name.includes('コーヒー') ? '☕️' : '�';
         return `
           <li class="history-item" 
               data-reward="${escapeHtml(item.reward_name)}" 
@@ -1037,3 +1020,4 @@ function showHistoryDetail(event) {
 const srOnlyStyle = document.createElement('style');
 srOnlyStyle.textContent = `.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }`;
 document.head.appendChild(srOnlyStyle);
+�
