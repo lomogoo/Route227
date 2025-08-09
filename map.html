@@ -1,10 +1,11 @@
-<!-- map.html（埋め込み専用。<header>/<footer>は持たない） -->
+<!-- map.html -->
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>イベントマップ（Embed）</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>イベントマップ</title>
+  <link rel="stylesheet" href="style.css">
 
   <!-- Leaflet CSS -->
   <link
@@ -14,32 +15,48 @@
     crossorigin=""
   />
   <style>
-    html,body { height:100%; margin:0; }
-    #map { height: 100%; width: 100%; background:#f2efe9; }
-
-    /* サムネ丸マーカー */
-    .thumb-marker{
-      width:38px;height:38px;border-radius:50%;
-      background-size:cover;background-position:center;background-color:#fff;
-      border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2);
+    #map {
+      width: 100%;
+      height: calc(100vh - 65px - 60px); /* ヘッダーとフッター分を除外 */
+      background: #f2efe9;
     }
-    .thumb-marker--fallback{display:grid;place-items:center;font-size:18px;color:#999;background:#fff}
-
-    /* ポップアップをカード調に寄せる（最低限） */
-    .leaflet-popup-content-wrapper{ border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
-    .leaflet-popup-content{ margin:0; padding:0; overflow:hidden; max-width:320px; }
-    .event-card__image{ width:100%; height:160px; object-fit:cover; display:block; background:#eee; }
-    .event-card__body{ padding:12px 14px 14px; display:grid; gap:6px; font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif; }
-    .event-card__title{ font-weight:700; font-size:16px; margin:0; }
-    .event-card__meta{ font-size:12px; color:#6c757d; display:grid; gap:2px; }
-    .event-card__desc{ font-size:13px; line-height:1.5; margin:4px 0 0; white-space:pre-line; }
-    .event-card__actions{ display:flex; gap:8px; padding:0 14px 12px; }
-    .btn{ appearance:none; border:none; cursor:pointer; padding:10px 14px; border-radius:12px; font-weight:700; font-size:13px; background:#EAE5E1; }
-    .btn--primary{ background:#ee7501; color:#fff; }
   </style>
 </head>
 <body>
-  <div id="map" role="region" aria-label="イベント地図"></div>
+  <div id="app-root">
+    <!-- ヘッダー -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="logo">
+          <img src="assets/logo.png" alt="Logo" class="logo-icon">
+          <span class="logo-text">イベントマップ</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- 本文 -->
+    <main>
+      <section class="section active">
+        <div id="map"></div>
+      </section>
+    </main>
+
+    <!-- フッターナビ -->
+    <nav class="footer-nav">
+      <a href="index.html" class="nav-link">
+        <svg width="24" height="24"><use href="#icon-home" /></svg>
+        ホーム
+      </a>
+      <a href="account.html" class="nav-link">
+        <svg width="24" height="24"><use href="#icon-user" /></svg>
+        アカウント
+      </a>
+      <a href="map.html" class="nav-link active">
+        <svg width="24" height="24"><use href="#icon-map" /></svg>
+        マップ
+      </a>
+    </nav>
+  </div>
 
   <!-- Leaflet JS -->
   <script
@@ -51,112 +68,35 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <script>
-    // Supabase
-    const { createClient } = window.supabase;
-    const supabase = createClient(
-      'https://hccairtzksnnqdujalgv.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k'
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
+      'YOUR_SUPABASE_URL',
+      'YOUR_SUPABASE_ANON_KEY'
     );
 
-    // Leaflet
-    const MAP_CENTER = [38.2682, 140.8694]; // 仙台
-    const map = L.map('map', { zoomControl:true, attributionControl:true }).setView(MAP_CENTER, 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      maxZoom: 19, attribution:'&copy; OpenStreetMap contributors'
+    const map = L.map('map').setView([38.2682, 140.8694], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // ユーティリティ
-    const wait = (ms)=> new Promise(r=>setTimeout(r,ms));
-    const escapeHtml = (s)=> String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-    const fmt = (iso)=>{ if(!iso) return ''; const d=new Date(iso);
-      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-
-    function popupHtml(ev){
-      const start=fmt(ev.start_time), end=fmt(ev.end_time);
-      const when = (start && end)? `${start} 〜 ${end}` : (start || '');
-      const addr = ev.address ? escapeHtml(ev.address) : '';
-      const img  = ev.thumbnail_url ? `<img class="event-card__image" src="${escapeHtml(ev.thumbnail_url)}" alt="">` : '';
-      const desc = ev.description ? `<p class="event-card__desc">${escapeHtml(ev.description)}</p>` : '';
-      return `
-        <article>
-          ${img}
-          <div class="event-card__body">
-            <h2 class="event-card__title">${escapeHtml(ev.title||'イベント')}</h2>
-            <div class="event-card__meta">
-              ${when ? `<div>🗓 ${when}</div>` : '' }
-              ${addr ? `<div>📍 ${addr}</div>` : '' }
-            </div>
-            ${desc}
-          </div>
-          <div class="event-card__actions">
-            ${addr ? `<button class="btn" onclick="openInMaps('${encodeURIComponent(ev.address)}')">地図アプリで開く</button>` : ''}
-            <button class="btn btn--primary" onclick="shareEvent('${encodeURIComponent(ev.title||'イベント')}', '${encodeURIComponent(location.href)}')">共有</button>
-          </div>
-        </article>`;
-    }
-
-    function icon(url){
-      return url ? L.divIcon({
-        className:'', html:`<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`,
-        iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16]
-      }) : L.divIcon({
-        className:'', html:`<div class="thumb-marker thumb-marker--fallback">📍</div>`,
-        iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16]
+    async function fetchEvents() {
+      const { data, error } = await supabaseClient
+        .from('events')
+        .select('*');
+      if (error) {
+        console.error(error);
+        return;
+      }
+      data.forEach(ev => {
+        if (ev.lat && ev.lng) {
+          L.marker([ev.lat, ev.lng])
+            .addTo(map)
+            .bindPopup(`<strong>${ev.title}</strong><br>${ev.address}`);
+        }
       });
     }
 
-    async function geocode(address){
-      if(!address) return null;
-      const u = new URL('https://nominatim.openstreetmap.org/search');
-      u.searchParams.set('format','json'); u.searchParams.set('q', address);
-      u.searchParams.set('countrycodes','jp'); u.searchParams.set('limit','1'); u.searchParams.set('accept-language','ja');
-      u.searchParams.set('email','example@example.com'); // ←あなたの連絡先に変更推奨
-      try{
-        const res = await fetch(u.toString(), { headers:{Accept:'application/json'} });
-        if(!res.ok) return null;
-        const json = await res.json();
-        if(Array.isArray(json)&&json.length) return [parseFloat(json[0].lat), parseFloat(json[0].lon)];
-      }catch(e){ console.warn(e); }
-      return null;
-    }
-
-    async function fetchEvents(){
-      const { data, error } = await supabase
-        .from('events')
-        .select('id,title,description,address,lat,lng,start_time,end_time,thumbnail_url')
-        .order('start_time', { ascending:true });
-      if(error){ console.error(error); return []; }
-      return data||[];
-    }
-
-    async function render(){
-      const evs = await fetchEvents();
-      const bounds = L.latLngBounds();
-
-      for(const ev of evs){
-        let { lat, lng } = ev;
-        if((lat==null || lng==null) && ev.address){
-          const c = await geocode(ev.address);
-          if(c){ lat=c[0]; lng=c[1]; supabase.from('events').update({lat,lng}).eq('id',ev.id); await wait(250); }
-        }
-        if(lat==null || lng==null) continue;
-
-        const m = L.marker([lat,lng], { icon: icon(ev.thumbnail_url) }).addTo(map);
-        m.bindPopup(popupHtml(ev), { maxWidth:360, minWidth:260 });
-        bounds.extend([lat,lng]);
-      }
-
-      if(bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] }); else map.setView([38.2682,140.8694], 12);
-    }
-
-    // 外部関数（埋め込みでも使えるよう window に出す）
-    window.openInMaps = (enc)=>{ const addr=decodeURIComponent(enc); open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`,'_blank'); };
-    window.shareEvent = async (t,u)=>{ const title=decodeURIComponent(t), url=decodeURIComponent(u);
-      if(navigator.share){ try{ await navigator.share({title,url}); }catch{} } else { await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
-
-    render();
-    // iOS Safari トリック
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(()=> map.invalidateSize(), 300); });
+    fetchEvents();
   </script>
 </body>
 </html>
