@@ -28,6 +28,8 @@ const appData = {
 
 /* 3) メイン処理 */
 document.addEventListener('DOMContentLoaded', () => {
+  // アプリ入場時のローディング開始時刻（最低3秒表示するため）
+  const appEntryStart = Date.now();
   setupStaticEventListeners();
   setupOfflineDetection();
   setupImageLazyLoading();
@@ -49,9 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isInitialAuthCheckDone) {
       isInitialAuthCheckDone = true;
       const appLoader = document.getElementById('app-loader');
-      if (appLoader.classList.contains('active')) {
-          appLoader.classList.remove('active');
-      }
+      // 初回は必ず3秒間ローディングを表示
+      const elapsed = Date.now() - appEntryStart;
+      const remaining = Math.max(3000 - elapsed, 0);
+      setTimeout(() => {
+          if (appLoader.classList.contains('active')) {
+              appLoader.classList.remove('active');
+          }
+      }, remaining);
 
       try {
         let initialSection = 'feed-section'; // デフォルト
@@ -513,8 +520,7 @@ function setupStaticEventListeners() {
 }
 
 async function showSection(sectionId, isInitialLoad = false) {
-  const appLoader = document.getElementById('app-loader');
-  if (!isInitialLoad && appLoader) appLoader.classList.add('active');
+  // セクション切替時はローダーを表示しない（入場時のみ表示）
 
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => {
@@ -535,10 +541,7 @@ async function showSection(sectionId, isInitialLoad = false) {
     }[sectionId];
     announceToScreenReader(`${sectionName}セクションに移動しました`);
   }
-
-  if (!isInitialLoad && appLoader) {
-    setTimeout(() => appLoader.classList.remove('active'), 100);
-  }
+  // セクション切替時のローダー非表示制御は行わない
 }
 
 function updateUserStatus(session) {
