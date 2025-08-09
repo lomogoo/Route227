@@ -786,7 +786,7 @@ input[type="password"]:focus {
 .progress-fill {
   position: absolute;
   top: 0;
-  left: 0;          /* ← 左基準 */
+  left: 100%;          /* ← 左基準 */
   right: auto;
   height: 100%;
   width: 0%;
@@ -797,9 +797,9 @@ input[type="password"]:focus {
 }
 
 
-@keyframes fill-bar-ltr {
-  from { width: 0%; }
-  to   { width: 100%; }
+@keyframes drain-bar-rtl {
+  from { width: 100%; }
+  to   { width: 0%; }
 }
 
 /* トラック：右端→左端へ移動しつつ、上下のボブを強める（±8px） */
@@ -816,7 +816,6 @@ input[type="password"]:focus {
 }
 
 /* 進捗アニメーション */
-@keyframes fill-bar { to { width: 100%; } }
 @keyframes move-truck { to { left: 100%; } }
 
 /* 横移動は linear、縦はふわっと（±8px） */
