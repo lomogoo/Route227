@@ -59,33 +59,29 @@
     </main>
 
     <!-- ▼ フッター（index.htmlと同じ並び＆アイコン） -->
-    <footer class="footer-nav" role="navigation" aria-label="メイン">
-      <a class="nav-link" href="index.html">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M3 12l9-9 9 9v7a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>
-        </svg>
-        フィード
-      </a>
-      <a class="nav-link" href="qr.html">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM19 13v4M15 17h4M19 21v-2"/>
-        </svg>
-        QR
-      </a>
-      <a class="nav-link" href="account.html">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="7" r="4"/><path d="M6 21a6 6 0 0 1 12 0"/>
-        </svg>
-        アカウント
-      </a>
-      <a class="nav-link active" href="map.html" aria-current="page">
-        <!-- 適当な地図SVG -->
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/>
-        </svg>
-        マップ
-      </a>
-    </footer>
+ <footer class="footer-nav">
+  <a href="#" class="nav-link active" data-section="feed-section">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    <span>フィード</span>
+  </a>
+
+<a href="map.html" class="nav-link">
+  <svg width="24" height="24"><use href="#icon-map" /></svg>
+  マップ
+</a>
+
+  <a href="#" class="nav-link" data-section="foodtruck-section">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stamp-icon lucide-stamp"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>
+    <span>スタンプ</span>
+  </a>
+
+
+    <a href="account.html" class="nav-link">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    <span>アカウント</span>
+  </a>
+  
+</footer>
     <!-- ▲ フッター -->
   </div>
 
