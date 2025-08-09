@@ -353,5 +353,28 @@
     </div>
 
   </div>
+
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("redirect") === "login-required") {
+    showToast("ログインしてからアクセスしてください", "toast-warning");
+    params.delete("redirect");
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+});
+
+function showToast(message, type = "") {
+  const toast = document.getElementById("toast-notification");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.className = type ? `show ${type}` : "show";
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+</script>
+
+  
 </body>
 </html>
