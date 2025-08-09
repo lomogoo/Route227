@@ -1,345 +1,179 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🚚 Route227 App</title>
-  <meta name="theme-color" content="#F2CC8F">
-
-  <meta name="theme-color" content="#F2CC8F" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="assets/icon-192.png">
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="style.css?v=1.0.3"/>
-  <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-  <script src="app.js?v=1.0.1" defer></script>
-  
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unified Feed & Stamp</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-
-<div id="toast-notification"></div>
-  
-  <div id="app-loader" class="app-loader active">
-    <div class="loading-spinner"></div>
+  <!-- App Loader (初期は active。JSで解除) -->
+  <div id="app-loader" class="app-loader active" aria-live="polite" aria-busy="true">
+    <div class="loader" role="status" aria-label="読み込み中"></div>
   </div>
 
-  <div id="app-root">
-    <header class="app-header">
-      <div class="container header-container">
-        <div class="logo">
-          <img src="assets/truck.png" alt="Route 227 トラックロゴ" class="logo-icon">
-          <span class="logo-text">Route 227</span>
-        </div>
-        
-        <div class="header-actions">
-          <a href="https://www.instagram.com/route227/" target="_blank" rel="noopener noreferrer" class="header-icon-link" aria-label="Instagram">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <div id="user-status"></div>
-        </div>
+  <!-- スクリーンリーダー向けライブリージョン -->
+  <div id="sr-live" aria-live="polite" style="position:absolute;left:-9999px;"></div>
 
-      </div>
-    </header>
-
-    <main class="app-content">
-      <section id="feed-section" class="section">
-        <div class="container">
-          <div class="category-tabs" id="category-tabs">
-            <button class="category-tab active" data-category="all">トップ</button>
-            <button class="category-tab" data-category="イベント">イベント</button>
-            <button class="category-tab" data-category="特集">特集</button>
-            <button class="category-tab" data-category="お店">お店</button>
-            <button class="category-tab" data-category="ニュース・コラム">ニュース・コラム</button>
-          </div>
-          <div class="articles-container" id="articles-container"></div>
-          <div id="load-more-container" class="load-more-container">
-            <button id="load-more-btn" class="btn btn-secondary">さらに読み込む</button>
-          </div>
-        </div>
-      </section>
-
-
-      <section id="rank-section" class="section">
-        <div class="container">
-          <div class="card">
-            <div class="card-header">
-              <h2>ランクシステム</h2>
-              <p>経験値を貯めてランクを上げよう！</p>
-            </div>
-            <div class="card-body">
-              <div class="rank-system">
-                
-                <div class="medal-container">
-                  <div class="glow-effect"></div>
-                  <div class="medal" id="rank-medal">
-                    <img id="rankMedalImage" src="" alt="ランクメダル">
-                  </div>
-                  <div class="sparkles"></div>
-                </div>
-
-                <div class="rank-info">
-                  <h3 id="rank-name">ブロンズ</h3>
-                  <p>次のランクまで: <span id="xp-to-next-rank">100</span> XP</p>
-                </div>
-
-                <div class="progress-container">
-                  <div class="progress-bar-wrapper">
-                    <div class="progress-bar" id="progress-bar"></div>
-                  </div>
-                  <span id="progress-text">0 / 100 XP</span>
-                </div>
-
-                <div class="rank-controls">
-                  <button id="addProgressBtn" class="btn btn-secondary">10 XP 追加</button>
-                  <button id="rankUpBtn" class="btn btn-primary">ランクアップ！</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h2>ランク一覧</h2>
-            </div>
-            <div class="card-body">
-              <ul class="rank-list" id="rank-list">
-                </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      
-      <section id="foodtruck-section" class="section">
-        <div class="container">
-          <div class="card today-info-card">
-            <div class="card-header">
-              <h2>今日の出店情報</h2>
-            </div>
-            <div class="card-body" id="today-info-container">  
-            </div>
-          </div>
-          <div class="card stamp-card-container">
-            <div class="card-header">
-              <h2>スタンプカード</h2>
-              <p>旅の思い出を集めよう</p>
-            </div>
-            <div class="card-body">
-              <div class="stamp-grid">
-                <div class="stamp" data-stamp-id="1"><span class="stamp-number">1</span></div>
-                <div class="stamp" data-stamp-id="2"><span class="stamp-number">2</span></div>
-                <div class="stamp" data-stamp-id="3"><span class="stamp-number">3</span></div>
-                <div class="stamp" data-stamp-id="4"><span class="stamp-number">4</span></div>
-                <div class="stamp" data-stamp-id="5"><span class="stamp-number">5</span></div>
-                <div class="stamp" data-stamp-id="6"><span class="stamp-number">6</span></div>
-              </div>
-            </div>
-            <div class="card-footer">
-              <button class="btn btn-primary btn-full" id="scan-qr">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/></svg>
-                <span>QRコードをスキャン</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="card rewards-card-container">
-            <div class="card-header">
-              <h2>特典と交換</h2>
-            </div>
-            <div class="card-body">
-              <div class="reward-item" id="coffee-reward-item">
-                <div class="reward-icon">☕️</div>
-                <div class="reward-info">
-                  <h3>コーヒー1杯</h3>
-                  <p>3スタンプで交換</p>
-                </div>
-                <button class="btn btn-secondary" id="coffee-reward" disabled>交換</button>
-              </div>
-              <div class="reward-item" id="curry-reward-item">
-                <div class="reward-icon">🍛</div>
-                <div class="reward-info">
-                  <h3>カレー1杯</h3>
-                  <p>6スタンプで交換</p>
-                </div>
-                <button class="btn btn-secondary" id="curry-reward" disabled>交換</button>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card history-card-container">
-            <div class="card-header">
-              <h2>交換履歴</h2>
-            </div>
-            <div class="card-body">
-              <ul class="history-list" id="history-list">
-                </ul>
-              <p id="history-empty-message" class="hidden" style="text-align: center; color: #6c757d;">まだ交換履歴はありません。</p>
-            </div>
-          </div>
-          
-          <div class="card schedule-card-container">
-            <div class="card-header">
-              <h2>出店スケジュール</h2>
-            </div>
-            <div class="card-body">
-              <img src="" alt="出店スケジュール" class="schedule-image" id="schedule-image-container" style="display: none;">
-            </div>
-          </div>
-
-        </div>
-      </section>
-    </main>
-<footer class="footer-nav">
-  <a href="#" class="nav-link active" data-section="feed-section">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-    <span>フィード</span>
-  </a>
-
-  <a href="#" class="nav-link" data-section="foodtruck-section">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stamp-icon lucide-stamp"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>
-    <span>スタンプ</span>
-  </a>
-
-
-    <a href="account.html" class="nav-link">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-    <span>アカウント</span>
-  </a>
-  
-</footer>
-
-    <div class="modal" id="qr-modal">
-      <div class="modal-content">
-        <div class="modal-header"><h3>QRコードをスキャン</h3><button class="close-modal">&times;</button></div>
-        <div class="modal-body"><div id="qr-reader"></div></div>
-      </div>
-    </div>
-
-    <div class="modal" id="notification-modal">
-      <div class="modal-content notification-content">
-        <button class="close-modal top-right-close">&times;</button>
-        <div class="modal-body">
-            <div id="notification-icon" class="notification-icon"></div>
-            <h3 id="notification-title" class="notification-title"></h3>
-            <p id="notification-message" class="notification-message"></p>
-            <button class="btn btn-primary btn-full modal-ok-btn">OK</button>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container container">
+      <div class="header-title">
+        <div class="brand-icon" aria-hidden="true"></div>
+        <div>
+          <div style="font-weight:800; letter-spacing:.02em;">Route227</div>
+          <small class="text-muted">Unified Feed / Stamp</small>
         </div>
       </div>
+      <div id="user-status" class="flex"></div>
     </div>
+  </header>
 
-    <div class="modal" id="history-detail-modal">
-        <div class="modal-content history-detail-content">
-            <button class="close-modal top-right-close">&times;</button>
-            <div class="modal-body">
-                <div id="history-detail-icon" class="history-detail-icon"></div>
-                <h3 id="history-detail-title" class="history-detail-title"></h3>
-                <div class="history-detail-info">
-                    <p><strong>交換日:</strong> <span id="history-detail-date"></span></p>
-                    <p><strong>消費スタンプ:</strong> <span id="history-detail-points"></span>個</p>
-                </div>
-                <p class="history-detail-footer">ご利用ありがとうございます！</p>
-            </div>
+  <!-- Main -->
+  <main class="app-content">
+    <!-- Feed Section -->
+    <section id="feed-section" class="section active">
+      <div class="container">
+        <div id="category-tabs" class="category-tabs" role="tablist" aria-label="カテゴリ">
+          <button class="category-tab active" data-category="all" role="tab" aria-selected="true">すべて</button>
+          <button class="category-tab" data-category="news" role="tab">お知らせ</button>
+          <button class="category-tab" data-category="event" role="tab">イベント</button>
+          <button class="category-tab" data-category="misc" role="tab">その他</button>
         </div>
-    </div>
 
-    <div class="modal" id="login-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3 id="auth-modal-title">ようこそ</h3>
-          <button class="close-modal" aria-label="閉じる">&times;</button>
-        </div>
-        <div class="modal-body">
-    
-          <div id="auth-initial-step">
-            <p>ログインまたはアカウントを新規登録します。</p>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-              <button id="start-login-btn" class="btn btn-primary btn-full">ログイン</button>
-              <button id="start-signup-btn" class="btn btn-secondary btn-full">新規登録</button>
-            </div>
-          </div>
-    
-          <div id="auth-email-step" class="hidden">
-            <p id="email-step-message" style="margin-top: 12px;"></p>
-            <input type="email" id="auth-email" placeholder="メールアドレス" required autocomplete="email" />
-            <button id="email-next-btn" class="btn btn-primary btn-full">次へ</button>
-            <p id="email-form-message" class="form-message"></p>
-            <button class="btn-link auth-back-btn" data-target="auth-initial-step">← 戻る</button>
-          </div>
-          
-          <div id="auth-login-password-step" class="hidden">
-            <p style="margin-top: 12px;">パスワードを入力してください。</p>
-            <p><strong id="login-email-display"></strong></p>
-            <input type="password" id="login-password" class="auth-password-input" placeholder="パスワード" required autocomplete="current-password" />
-            <p id="login-form-message" class="form-message"></p>
-            <button id="login-button" class="btn btn-primary btn-full">ログイン</button>
-            <a href="#" id="forgot-password-link" class="btn-link">パスワードを忘れましたか？</a>
-            <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
-          </div>
-    
-          <div id="auth-signup-password-step" class="hidden">
-            <p style="margin-top: 12px;">パスワードを設定してください。</p>
-            <p><strong id="signup-email-display"></strong></p>
-            <input type="password" id="signup-password" class="auth-password-input" placeholder="パスワード" required autocomplete="new-password" />
-            <input type="password" id="signup-password-confirm" class="auth-password-input" placeholder="パスワード（確認用）" required autocomplete="new-password" />
-            <ul id="password-policy" class="password-policy">
-              <li id="policy-length">8文字以上</li>
-              <li id="policy-uppercase">大文字を含む</li>
-              <li id="policy-lowercase">小文字を含む</li>
-              <li id="policy-number">数字を含む</li>
-            </ul>
-            <p id="signup-form-message" class="form-message"></p>
-            <button id="signup-button" class="btn btn-primary btn-full">登録してログイン</button>
-            <button class="btn-link auth-back-btn" data-target="auth-email-step">← 戻る</button>
-          </div>
-          
+        <div id="articles-container" class="articles-container" aria-live="polite"></div>
+        <div class="center">
+          <button id="load-more-btn" class="btn" style="display:inline-flex; align-items:center; gap:6px;">もっと見る</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="modal" id="summary-modal">
-      <div class="modal-content summary-modal-content">
-        <button class="close-modal summary-close-btn">&times;</button>
-        <div id="summary-image" class="summary-image"></div>
-        <div class="summary-text-content">
-          <h3 id="summary-title"></h3>
-          <ul id="summary-bullets"></ul>
-          <a href="#" id="summary-read-more" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-full">
-            <span>記事を読む</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
+    <!-- Stamp / Foodtruck Section -->
+    <section id="foodtruck-section" class="section">
+      <div class="container">
+        <div class="card">
+          <div class="card-header"><strong>今日の出店情報</strong></div>
+          <div id="today-vendors" class="card-body">
+            <div class="text-muted">読み込み中…</div>
+          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="modal" id="welcome-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>これまでご利用の皆様へ</h3>
-          <button class="close-modal" aria-label="閉じる">&times;</button>
+        <div class="card">
+          <div class="card-header"><strong>出店スケジュール</strong></div>
+          <div id="vendor-schedule" class="card-body">
+            <div class="text-muted">読み込み中…</div>
+          </div>
         </div>
-        <div class="modal-body" style="text-align: left;">
-          <p>アプリのリニューアルに伴い、再度アカウントの登録をお願いしております。</p>
-          <p>お手数ですが、下記のボタンから、<strong>これまでご利用されていたメールアドレスで</strong>再度ご登録ください。</p>
-          <p style="font-size: 13px; color: #6c757d; margin-top: 16px;">
-            ※同じメールアドレスでご登録いただくことで、これまでのスタンプ数が正常に引き継がれます。
-          </p>
-          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 24px;">
-            <button id="welcome-modal-signup-btn" class="btn btn-primary btn-full">新規登録はこちら</button>
-            <button class="btn btn-secondary btn-full modal-ok-btn">後で登録する</button>
+
+        <div class="card">
+          <div class="card-header space-between flex"><strong>スタンプカード</strong>
+            <div class="flex">
+              <button id="scan-qr" class="btn">QRスキャン</button>
+              <button id="coffee-reward" class="btn">コーヒー特典</button>
+              <button id="curry-reward" class="btn">カレー特典</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="stamp-grid" id="stamp-grid"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><strong>特典履歴</strong></div>
+          <div id="reward-history" class="card-body">
+            <div class="text-muted">履歴はまだありません</div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
+    <!-- Rank Section -->
+    <section id="rank-section" class="section">
+      <div class="container">
+        <div class="card">
+          <div class="card-header"><strong>ランキング</strong></div>
+          <div class="card-body">
+            <ol id="rank-list" class="rank-list"></ol>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Navigation -->
+  <nav class="footer-nav" aria-label="メインナビゲーション">
+    <button class="nav-link active" data-section="feed-section" aria-label="フィード">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h16M4 6h16M4 18h16"/></svg>
+      フィード
+    </button>
+    <button class="nav-link" data-section="foodtruck-section" aria-label="スタンプ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M4 12a8 8 0 1 0 16 0"/></svg>
+      スタンプ
+    </button>
+    <button class="nav-link" data-section="rank-section" aria-label="ランク">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21V10M16 21V3M12 21v-6"/></svg>
+      ランク
+    </button>
+  </nav>
+
+  <!-- Toast -->
+  <div id="toast-notification" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal" aria-hidden="true" aria-labelledby="login-title">
+    <div class="modal-content">
+      <div class="modal-header space-between flex">
+        <strong id="login-title">ログイン</strong>
+        <button class="btn close-modal" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="auth-step active" id="login-step">
+          <label for="login-email">メールアドレス</label>
+          <input id="login-email" class="input" type="email" placeholder="you@example.com" />
+          <div class="mt-2"></div>
+          <label for="login-password">パスワード</label>
+          <input id="login-password" class="input" type="password" />
+          <div class="mt-3"></div>
+          <button id="login-submit" class="btn primary" style="width:100%;">ログイン</button>
+        </div>
+        <div class="auth-step" id="message-step" aria-live="polite">
+          <p id="message-text">メッセージ</p>
+        </div>
+      </div>
+      <div class="modal-footer center">
+        <button class="btn modal-ok-btn">OK</button>
+      </div>
+    </div>
   </div>
+
+  <!-- Welcome Modal -->
+  <div id="welcome-modal" class="modal" aria-hidden="true" aria-labelledby="welcome-title">
+    <div class="modal-content">
+      <div class="modal-header space-between flex">
+        <strong id="welcome-title">ようこそ</strong>
+        <button class="btn close-modal" aria-label="閉じる">×</button>
+      </div>
+      <div class="modal-body">
+        <p>はじめてのご利用ありがとうございます。フィードやスタンプをお楽しみください。</p>
+      </div>
+      <div class="modal-footer center">
+        <button class="btn modal-ok-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 必要なら、Supabase の設定を index.html 側でグローバルに持たせてください（例） -->
+  <!--
+  <script>
+    window.SUPABASE_URL = "https://xxxxxxxx.supabase.co";
+    window.SUPABASE_ANON_KEY = "xxxxxxxxxxxxxxxxxxxxxxxx";
+  </script>
+  -->
+
+  <!-- あなたの環境で supabase-js を読み込んでいる場合はそのままにしてください -->
+  <!-- <script src="https://unpkg.com/@supabase/supabase-js@2"></script> -->
+
+  <script src="./app.js"></script>
 </body>
 </html>
