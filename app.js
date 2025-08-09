@@ -73,6 +73,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // ポップアップ表示のチェックを実行
         checkAndShowWelcomePopup();
 
+        // ▼ 追加: アカウントページから未ログインで戻された場合のトースト／モーダル表示
+        const redirectMsg = localStorage.getItem('loginRedirectMessage');
+        if (redirectMsg) {
+          // 理由をトーストで表示
+          showToast(redirectMsg, 'warning', 4000);
+          localStorage.removeItem('loginRedirectMessage');
+        }
+        const shouldOpenLogin = localStorage.getItem('showLoginModal') === 'true';
+        if (shouldOpenLogin) {
+          const loginModal = document.getElementById('login-modal');
+          if (loginModal) {
+            openModal(loginModal);
+          }
+          localStorage.removeItem('showLoginModal');
+        }
+        // ▲ ここまで追加
+
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
         await showSection('feed-section', true);
@@ -973,7 +990,7 @@ async function displayRewardHistory() {
       historyList.innerHTML = data.map(item => {
         const date = new Date(item.exchanged_at);
         const formattedDate = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-        const icon = item.reward_name.includes('コーヒー') ? '☕️' : '�';
+        const icon = item.reward_name.includes('コーヒー') ? '☕️' : '🍛';
         return `
           <li class="history-item" 
               data-reward="${escapeHtml(item.reward_name)}" 
