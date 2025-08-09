@@ -60,15 +60,6 @@ body {
   opacity: 0;
   pointer-events: none;
 }
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid var(--color-accent);
-  border-top: 5px solid var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* 3. Layout & Header */
 #app-root {
@@ -232,7 +223,7 @@ input[type="password"] {
 .auth-password-input {
   font-size: 20px !important;
   padding: 14px !important;
-  text-align: center;
+  text合わせ: center;
 }
 
 input[type="email"]:focus,
@@ -748,7 +739,7 @@ input[type="password"]:focus {
     font-size: 12px !important;
     color: #adb5bd !important;
     margin-top: 24px;
-    margin-bottom: 0 !important;
+    margin-bottom: 0 !重要;
 }
 
 /* 15. Responsive & Accessibility */
@@ -772,164 +763,57 @@ input[type="password"]:focus {
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
-
-/* ========= Truck Loader ========= */
-.truck-loader {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 16 / 9;
+/* ========= Truck Progress Loader (バーの先頭をトラックが走る) ========= */
+.truck-progress-loader {
+  width: min(480px, 86vw);
+  padding: 32px 16px;
+  border-radius: var(--radius-lg);
   display: grid;
   place-items: center;
-  overflow: hidden;
-  border-radius: var(--radius-lg);
+  gap: 16px;
 }
 
-.app-loader { /* 既存のローダー内配置を中央に */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 空と雲 */
-.sky {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #FFF5E6 0%, #FDFBF7 70%);
-  z-index: 0;
-}
-.cloud {
-  position: absolute;
-  top: 10%;
-  width: 120px;
-  height: 36px;
-  background: #ffffffcc;
-  border-radius: 999px;
-  filter: blur(0.2px);
-  animation: cloud-drift 14s linear infinite;
-}
-.cloud::before,
-.cloud::after {
-  content: "";
-  position: absolute;
-  background: #ffffffcc;
-  border-radius: 999px;
-}
-.cloud::before { width: 80px; height: 26px; left: -30px; top: -8px; }
-.cloud::after  { width: 60px; height: 20px; right: -20px; top: 4px; }
-.cloud-1 { left: -150px; animation-delay: 0s; top: 14%; }
-.cloud-2 { left: -220px; animation-delay: 5s; top: 28%; }
-
-@keyframes cloud-drift {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(140%); }
-}
-
-/* トラック本体 */
-.truck {
+/* バー全体 */
+.progress-track {
   position: relative;
-  z-index: 2;
-  display: inline-block;
-  transform-origin: center;
-  animation: truck-bob 1.8s ease-in-out infinite;
-}
-.truck img {
-  width: 160px;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.12));
-}
-@keyframes truck-bob {
-  0%, 100% { transform: translateY(0) }
-  50%      { transform: translateY(-4px) }
+  width: 100%;
+  height: 10px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 999px;
+  overflow: visible; /* トラックが少しはみ出しても見えるように */
 }
 
-/* タイヤ（回転） */
-.wheel {
+/* バーの塗り部分（3秒で100%） */
+.progress-fill {
   position: absolute;
-  bottom: -4px;
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, #222 40%, transparent 41%) ,
-    conic-gradient(#222 0 10%, #eee 10% 20%, #222 20% 30%, #eee 30% 40%, #222 40% 50%,
-                   #eee 50% 60%, #222 60% 70%, #eee 70% 80%, #222 80% 90%, #eee 90% 100%);
-  box-shadow: inset 0 0 0 3px #333, 0 2px 4px rgba(0,0,0,0.2);
-  animation: wheel-spin 0.9s linear infinite;
-}
-.wheel-front { left: 115px; }
-.wheel-back  { left: 48px;  }
-
-@keyframes wheel-spin {
-  to { transform: rotate(360deg); }
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #E76F51, #F2CC8F);
+  border-radius: inherit;
+  animation: fill-bar 3s linear forwards;
 }
 
-/* 道路＆中央線スクロール */
-/* 道路＆中央線スクロール - ブランドカラー版 */
-.road {
-  position: absolute;
-  bottom: 10%;
-  left: -10%;
-  width: 120%;
-  height: 44px;
-  background: #2d2a28;
-  border-radius: 10px;
-  z-index: 1;
-  overflow: hidden;
-  /* 上に細いオレンジラインを追加してRoute227感アップ */
-  box-shadow:
-    inset 0 6px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 4px #E76F51; /* ブランドオレンジ枠 */
-}
-
-.lane {
+/* トラック（塗りの先頭に同期） */
+.truck-on-bar {
   position: absolute;
   top: 50%;
-  left: 0;
-  width: 200%;
-  height: 4px;
-  transform: translateY(-50%);
-  background:
-    repeating-linear-gradient(
-      to right,
-      transparent 0 40px,
-      #F2CC8F 40px 80px /* ブランドの薄い黄色 */
-    );
-  animation: lane-scroll 1.2s linear infinite;
-  opacity: 0.9;
+  left: 0%;
+  transform: translate(-50%, -50%);
+  height: 40px;  /* 小さめ */
+  width: auto;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,0.12));
+  animation: move-truck 3s linear forwards;
 }
 
-.lane:nth-child(2) {
-  top: 30%;
-  opacity: 0.5;
-  animation-duration: 1.6s;
-}
-.lane:nth-child(3) {
-  top: 70%;
-  opacity: 0.5;
-  animation-duration: 1.6s;
-}
+/* 進捗アニメーション */
+@keyframes fill-bar { to { width: 100%; } }
+@keyframes move-truck { to { left: 100%; } }
 
-@keyframes lane-scroll {
-  to { transform: translate(-50%, -50%); }
-}
-
-.loader-text {
-  position: absolute;
-  bottom: 58px;
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--color-text);
-  text-shadow: 0 1px 0 #fff;
-  animation: text-pulse 1.8s ease-in-out infinite;
-}
-@keyframes text-pulse {
-  0%, 100% { opacity: 0.6; transform: translateY(0); }
-  50%      { opacity: 1;   transform: translateY(-1px); }
-}
-
-/* 低速端末／モーション軽減 */
+/* モーション軽減個別対応（全体設定もあるが念のため） */
 @media (prefers-reduced-motion: reduce) {
-  .truck, .wheel, .lane, .cloud, .loader-text { animation: none !important; }
+  .progress-fill, .truck-on-bar {
+    animation-duration: 1ms !important;
+  }
 }
-
