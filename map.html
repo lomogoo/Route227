@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>イベントマップ（仙台）</title>
+  <title>イベントマップ | Route 227</title>
+
+  <link rel="stylesheet" href="style.css" />
 
   <!-- Leaflet CSS -->
   <link
@@ -13,124 +15,92 @@
     crossorigin=""
   />
 
-  <!-- 基本スタイル（最小限） -->
   <style>
-    :root{
-      --color-bg:#FDFBF7;
-      --color-text:#3D352E;
-      --color-primary:#ee7501;
-      --radius-lg:20px;
-      --shadow-lg:0 8px 24px rgba(61,53,46,0.12);
-    }
-    html,body{height:100%;}
-    body{
-      margin:0;
-      font-family: "Noto Sans JP", system-ui, -apple-system, sans-serif;
-      background:var(--color-bg);
-      color:var(--color-text);
-      -webkit-font-smoothing:antialiased;
-    }
-    header{
-      position:sticky; top:0; z-index:1000;
-      background:rgba(253,251,247,0.85);
-      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);
-      padding:12px 16px;
-      display:flex; align-items:center; gap:12px;
-      border-bottom:1px solid #F0EBE5;
-    }
-    header h1{
-      margin:0; font-size:16px; font-weight:700;
-    }
-    #map{
-      position:relative;
-      height: calc(100dvh - 56px); /* 全画面（ヘッダー差し引き） */
+    /* ページ固有の少量カスタムだけ */
+    #map {
+      height: calc(100dvh - 65px - 64px); /* 画面-フッター-ヘッダー */
       width: 100%;
-      z-index: 1;
     }
+    .leaflet-container { background: #f2efe9; }
 
-    /* サムネ丸マーカー（DivIcon） */
+    /* サムネ丸マーカー */
     .thumb-marker{
-      width:38px; height:38px;
-      border-radius:50%;
-      background-size: cover;
-      background-position:center;
-      background-color:#fff;
-      border: 2px solid #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+      width:38px;height:38px;border-radius:50%;
+      background-size:cover;background-position:center;background-color:#fff;
+      border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2);
     }
-    .thumb-marker--fallback{
-      display:grid; place-items:center;
-      font-size:18px; line-height:1;
-      background: #fff;
-      color:#999;
-    }
+    .thumb-marker--fallback{display:grid;place-items:center;font-size:18px;color:#999;background:#fff}
 
-    /* Leafletのポップアップをカード風に */
-    .leaflet-popup-content-wrapper{
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-    }
-    .leaflet-popup-content{
-      margin:0;
-      padding:0;
-      overflow:hidden;
-      max-width: 320px;
-    }
-    .event-card{
-      display:grid; grid-template-columns: 1fr;
-    }
-    .event-card__image{
-      width:100%; height:160px; object-fit:cover; background:#eee;
-      display:block;
-    }
-    .event-card__body{
-      padding:12px 14px 14px;
-      display:grid; gap:6px;
-    }
-    .event-card__title{
-      font-weight:700; font-size:16px; margin:0;
-    }
-    .event-card__meta{
-      font-size:12px; color:#6c757d;
-      display:grid; gap:2px;
-    }
-    .event-card__desc{
-      font-size:13px; line-height:1.5; margin:4px 0 0;
-      white-space:pre-line;
-    }
-    .event-card__actions{
-      display:flex; gap:8px; padding: 0 14px 12px;
-    }
-    .btn{
-      appearance:none; border:none; cursor:pointer;
-      padding:10px 14px; border-radius:12px;
-      font-weight:700; font-size:13px;
-      background:#EAE5E1; color:var(--color-text);
-    }
-    .btn--primary{ background:var(--color-primary); color:#fff; }
-    .btn:active{ transform: translateY(1px); }
-
-    /* 右下に「現在地へ」ボタン */
+    /* ポップアップをカード調 */
+    .leaflet-popup-content-wrapper{border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
+    .leaflet-popup-content{margin:0;padding:0;overflow:hidden;max-width:320px}
+    .event-card{display:grid}
+    .event-card__image{width:100%;height:160px;object-fit:cover;background:#eee;display:block}
+    .event-card__body{padding:12px 14px 14px;display:grid;gap:6px}
+    .event-card__title{font-weight:700;font-size:16px;margin:0}
+    .event-card__meta{font-size:12px;color:#6c757d;display:grid;gap:2px}
+    .event-card__desc{font-size:13px;line-height:1.5;margin:4px 0 0;white-space:pre-line}
+    .event-card__actions{display:flex;gap:8px;padding:0 14px 12px}
     .locate-btn{
-      position: absolute; right: 12px; bottom: 12px; z-index: 500;
+      position: fixed; right: 12px; bottom: 80px; z-index: 500;
       background:#fff; border:1px solid #eee; border-radius:12px;
-      box-shadow: var(--shadow-lg);
-      padding:10px 12px; font-weight:700; font-size:13px; cursor:pointer;
-    }
-
-    @media (max-width:480px){
-      .event-card__image{ height: 140px; }
+      box-shadow: var(--shadow-lg); padding:10px 12px; font-weight:700; font-size:13px; cursor:pointer;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>イベントマップ（仙台）</h1>
+  <!-- 共通ヘッダー -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="logo">
+        <img class="logo-icon" src="assets/logo.png" alt="" />
+        <span class="logo-text">Route 227</span>
+      </div>
+      <nav class="header-actions">
+        <!-- 必要ならアイコン等 -->
+      </nav>
+    </div>
   </header>
 
-  <div id="map" role="region" aria-label="イベント地図"></div>
-  <button class="locate-btn" id="locate-btn">現在地へ</button>
+  <!-- コンテンツ -->
+  <main id="app-root">
+    <section class="section active" id="map-section">
+      <div class="card">
+        <div class="card-header">
+          <h2>イベントマップ（仙台）</h2>
+          <p>サムネの丸をタップすると詳細が表示されます</p>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="map" role="region" aria-label="イベント地図"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 共通トースト（ローダーは無し） -->
+  <div id="toast-notification" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- 共通フッター（マップを active） -->
+  <footer class="footer-nav" role="navigation" aria-label="メイン">
+    <a class="nav-link" href="index.html" aria-label="フィード">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12l2-2 7-7 7 7 2 2v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>
+      フィード
+    </a>
+    <a class="nav-link" href="qr.html" aria-label="QR">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM19 13v4M15 17h4M19 21v-2"/></svg>
+      QR
+    </a>
+    <a class="nav-link" href="account.html" aria-label="アカウント">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm7 9a7 7 0 0 0-14 0"/></svg>
+      アカウント
+    </a>
+    <a class="nav-link active" href="map.html" aria-label="マップ">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/>
+      </svg>
+      マップ
+    </a>
+  </footer>
 
   <!-- Leaflet JS -->
   <script
@@ -143,44 +113,21 @@
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
   <script>
-    // ====== 1) Supabase 初期化（既存の値に合わせてあります） ======
+    // ===== Supabase
     const { createClient } = window.supabase;
     const supabase = createClient(
       'https://hccairtzksnnqdujalgv.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k'
     );
 
-    // ====== 2) Leaflet マップ初期化（仙台中心） ======
+    // ===== Leaflet
     const MAP_CENTER = [38.2682, 140.8694]; // 仙台
-    const map = L.map('map', {
-      zoomControl: true,
-      attributionControl: true
-    }).setView(MAP_CENTER, 12);
-
-    // タイル（OpenStreetMap）
+    const map = L.map('map', { zoomControl:true, attributionControl:true }).setView(MAP_CENTER, 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-      maxZoom: 19,
-      attribution:'&copy; OpenStreetMap contributors'
+      maxZoom: 19, attribution:'&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    // ====== 3) イベントを読み込む（テーブル例: events） ======
-    // 想定スキーマ:
-    // id, title, description, address, lat, lng, start_time, end_time, thumbnail_url
-    async function fetchEvents(){
-      const { data, error } = await supabase
-        .from('events')
-        .select('id,title,description,address,lat,lng,start_time,end_time,thumbnail_url')
-        .order('start_time', { ascending: true });
-
-      if(error){
-        console.error('イベント取得失敗:', error);
-        return [];
-      }
-      return data || [];
-    }
-
-    // ====== 4) 住所→緯度経度 のジオコーディング（Nominatim を利用） ======
-    // ※ 公開サイトで使う場合は rate limit に注意。アプリの連絡先 email を設定してください。
+    // 住所→座標（Nominatim）
     async function geocodeAddress(address){
       if(!address) return null;
       const url = new URL('https://nominatim.openstreetmap.org/search');
@@ -189,67 +136,45 @@
       url.searchParams.set('countrycodes','jp');
       url.searchParams.set('limit','1');
       url.searchParams.set('accept-language', 'ja');
-      url.searchParams.set('email', 'example@example.com'); // ←連絡先メールに差し替え推奨
-
+      url.searchParams.set('email', 'example@example.com'); // ←差し替え推奨
       try{
-        const res = await fetch(url.toString(), {
-          headers: {
-            'Accept':'application/json'
-          }
-        });
+        const res = await fetch(url.toString(), { headers:{'Accept':'application/json'} });
         if(!res.ok) return null;
         const json = await res.json();
         if(Array.isArray(json) && json.length){
           return [ parseFloat(json[0].lat), parseFloat(json[0].lon) ];
         }
-      }catch(e){
-        console.warn('Geocoding失敗:', e);
-      }
+      }catch(e){ console.warn('Geocoding失敗:', e); }
       return null;
     }
-
-    // 住所でジオコーディングが成功したら、その結果をSupabaseにキャッシュ（lat/lng更新）
     async function maybeCacheLatLng(eventId, lat, lng){
-      try{
-        await supabase.from('events')
-          .update({ lat, lng })
-          .eq('id', eventId);
-      }catch(e){
-        console.warn('lat/lngのキャッシュ保存失敗:', e);
-      }
+      try{ await supabase.from('events').update({ lat, lng }).eq('id', eventId); }
+      catch(e){ console.warn('lat/lng保存失敗:', e); }
     }
 
-    // ====== 5) サムネ丸アイコン（DivIcon） ======
+    // 丸いサムネのDivIcon
     function thumbDivIcon(url){
       if(url){
         return L.divIcon({
           className: '',
           html: `<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`,
-          iconSize: [38,38],
-          iconAnchor: [19,19],
-          popupAnchor: [0,-16]
-        });
-      }else{
-        return L.divIcon({
-          className: '',
-          html: `<div class="thumb-marker thumb-marker--fallback">📍</div>`,
-          iconSize: [38,38],
-          iconAnchor: [19,19],
-          popupAnchor: [0,-16]
+          iconSize: [38,38], iconAnchor: [19,19], popupAnchor: [0,-16]
         });
       }
+      return L.divIcon({
+        className: '',
+        html: `<div class="thumb-marker thumb-marker--fallback">📍</div>`,
+        iconSize: [38,38], iconAnchor: [19,19], popupAnchor: [0,-16]
+      });
     }
 
-    // ====== 6) ポップアップの中身（カード） ======
     function eventPopupHtml(ev){
       const start = formatDateTime(ev.start_time);
       const end   = formatDateTime(ev.end_time);
       const when  = (start && end) ? `${start} 〜 ${end}` : (start || '');
       const addr  = ev.address ? escapeHtml(ev.address) : '';
-
-      const img  = ev.thumbnail_url ? `<img class="event-card__image" src="${escapeHtml(ev.thumbnail_url)}" alt="">` : '';
-      const desc = ev.description ? `<p class="event-card__desc">${escapeHtml(ev.description)}</p>` : '';
-
+      const img   = ev.thumbnail_url ? `<img class="event-card__image" src="${escapeHtml(ev.thumbnail_url)}" alt="">` : '';
+      const desc  = ev.description ? `<p class="event-card__desc">${escapeHtml(ev.description)}</p>` : '';
       return `
         <article class="event-card">
           ${img}
@@ -269,111 +194,54 @@
       `;
     }
 
-    // ====== 7) マーカー配置 ======
+    async function fetchEvents(){
+      const { data, error } = await supabase
+        .from('events')
+        .select('id,title,description,address,lat,lng,start_time,end_time,thumbnail_url')
+        .order('start_time', { ascending: true });
+      if(error){ toast('イベント取得に失敗しました'); return []; }
+      return data || [];
+    }
+
     async function render(){
       const events = await fetchEvents();
-      if(!events.length){
-        console.info('イベントがありません');
-        return;
-      }
-
       const bounds = L.latLngBounds();
 
       for(const ev of events){
-        let lat = ev.lat, lng = ev.lng;
+        let { lat, lng } = ev;
 
-        // 座標が無い場合は住所からジオコーディング
         if((lat==null || lng==null) && ev.address){
           const coords = await geocodeAddress(ev.address);
           if(coords){
             lat = coords[0]; lng = coords[1];
-            // 取得できたらDBにキャッシュ
             maybeCacheLatLng(ev.id, lat, lng);
-            // 軽いウェイト（Nominatimのレート制御）
-            await wait(250);
+            await wait(250); // rate制御
           }
         }
-
-        if(lat==null || lng==null){
-          // 場所不明はスキップ
-          continue;
-        }
+        if(lat==null || lng==null) continue;
 
         const marker = L.marker([lat,lng], { icon: thumbDivIcon(ev.thumbnail_url) }).addTo(map);
         marker.bindPopup(eventPopupHtml(ev), { maxWidth: 360, minWidth: 260 });
-
         bounds.extend([lat,lng]);
       }
 
-      // 1件だけでも少しズーム、複数あれば全体にフィット
-      if(bounds.isValid()){
-        map.fitBounds(bounds, { padding:[40,40] });
-      }else{
-        map.setView(MAP_CENTER, 12);
-      }
+      if(bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] });
+      else map.setView(MAP_CENTER, 12);
     }
 
-    // ====== 8) ユーティリティ ======
+    // 小物
+    function escapeHtml(str){return String(str??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
+    function wait(ms){return new Promise(r=>setTimeout(r,ms));}
     function formatDateTime(iso){
-      if(!iso) return '';
-      try{
-        const d = new Date(iso);
-        const y = d.getFullYear();
-        const m = String(d.getMonth()+1).padStart(2,'0');
-        const day= String(d.getDate()).padStart(2,'0');
-        const hh = String(d.getHours()).padStart(2,'0');
-        const mm = String(d.getMinutes()).padStart(2,'0');
-        return `${y}/${m}/${day} ${hh}:${mm}`;
-      }catch{ return ''; }
+      if(!iso) return ''; const d=new Date(iso);
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+      const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+      return `${y}/${m}/${day} ${hh}:${mm}`;
     }
-    function escapeHtml(str){
-      if(str==null) return '';
-      return String(str)
-        .replace(/&/g,'&amp;')
-        .replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;')
-        .replace(/'/g,'&#039;');
+    function toast(msg){
+      const el = document.getElementById('toast-notification'); if(!el) return;
+      el.textContent = msg; el.className = 'show toast-warning';
+      setTimeout(()=> el.classList.remove('show'), 3000);
     }
-    function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
-
-    // 外部アクション
     window.openInMaps = (encAddress)=>{
-      const addr = decodeURIComponent(encAddress);
-      // iOS/Android/PC問わず使えるGoogleマップを既定に
-      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
-      window.open(url, '_blank');
-    };
-    window.shareEvent = async (encTitle, encUrl)=>{
-      const title = decodeURIComponent(encTitle);
-      const url   = decodeURIComponent(encUrl);
-      if(navigator.share){
-        try{ await navigator.share({title, url}); }catch{}
-      }else{
-        await navigator.clipboard.writeText(url);
-        alert('URLをクリップボードにコピーしました');
-      }
-    };
-
-    // 現在地へ
-    document.getElementById('locate-btn').addEventListener('click', ()=>{
-      if(!navigator.geolocation){
-        alert('位置情報が利用できません');
-        return;
-      }
-      navigator.geolocation.getCurrentPosition((pos)=>{
-        const { latitude, longitude } = pos.coords;
-        map.setView([latitude, longitude], 15);
-        L.circleMarker([latitude, longitude], {
-          radius: 6, color: '#2c7be5', fillColor: '#2c7be5', fillOpacity: .9
-        }).addTo(map).bindTooltip('現在地');
-      }, ()=>{
-        alert('現在地を取得できませんでした');
-      }, { enableHighAccuracy:true, timeout:8000 });
-    });
-
-    // 実行
-    render();
-  </script>
-</body>
-</html>
+      co
