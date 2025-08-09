@@ -28,9 +28,29 @@
 
 <div id="toast-notification"></div>
   
-  <div id="app-loader" class="app-loader active">
-    <div class="loading-spinner"></div>
+<div id="app-loader" class="app-loader active" aria-live="polite">
+  <div class="truck-loader" role="status" aria-label="ロード中">
+    <div class="sky">
+      <div class="cloud cloud-1"></div>
+      <div class="cloud cloud-2"></div>
+    </div>
+
+    <div class="truck">
+      <img src="assets/truck.png" alt="" aria-hidden="true" />
+      <div class="wheel wheel-front"></div>
+      <div class="wheel wheel-back"></div>
+    </div>
+
+    <div class="road">
+      <div class="lane"></div>
+      <div class="lane"></div>
+      <div class="lane"></div>
+    </div>
+
+    <p class="loader-text">Route 227 を読み込み中...</p>
   </div>
+</div>
+
 
   <div id="app-root">
     <header class="app-header">
