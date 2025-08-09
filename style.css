@@ -386,7 +386,7 @@ input[type="password"]:focus {
 #toast-notification {
   position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
   background-color: rgba(0, 0, 0, 0.75); color: white;
-  padding: 12px 24px; border-radius: 25px; z-index: 1000;
+  padding: 12px 24px; border-radius: 25px; z-index: 20001;
   opacity: 0; transition: opacity 0.5s ease-in-out; pointer-events: none;
   max-width: 90%; text-align: center; font-size: 14px;
 }
