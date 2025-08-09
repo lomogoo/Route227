@@ -427,7 +427,7 @@ input[type="password"]:focus {
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #aaa; }
 
-/* ========= Truck Follow Loader (シークバー無し・トラック＋loading追従) ========= */
+/* ========= Truck Follow Loader（シークバー無し＋1文字ずつ波打つ loading） ========= */
 .truck-follow-loader {
   width: min(520px, 90vw);
   padding: 32px 16px;
@@ -435,43 +435,67 @@ input[type="password"]:focus {
   place-items: center;
   border-radius: var(--radius-lg);
 }
+
 .follow-track {
   position: relative;
   width: 100%;
   height: 80px;
-  overflow: hidden; /* 右外から入って左外へ抜ける */
+  overflow: hidden;
 }
-/* トラック＋文字のグループを右外→左外へ3秒で移動 */
+
+/* トラック＋文字のグループを右外 → 左外へ3秒移動 */
 .moving-group {
-  position: absolute; top: 50%; left: 0;
-  display: inline-flex; align-items: center; gap: 12px; /* トラックの“後ろ”に文字 */
-  transform: translateY(-50%) translateX(110%);
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateY(-50%) translateX(130%); /* ← スタート位置をもっと右にして見切れ感 */
   animation: move-left-3s 3s linear forwards;
   will-change: transform;
 }
+
 /* トラック：上下にしっかり揺らす（±10px） */
 .truck-img {
-  height: 44px; width: auto;
+  height: 44px;
+  width: auto;
   filter: drop-shadow(0 6px 10px rgba(0,0,0,0.12));
   animation: truck-bob 0.8s ease-in-out infinite;
   will-change: transform;
 }
-/* “loading...” は軽く跳ねる（±6px） */
+
+/* loading... 文字を1文字ずつ波打たせる */
 .loading-text {
+  display: inline-flex;
+  gap: 2px;
+}
+.loading-text span {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--color-text);
   text-shadow: 0 1px 0 #fff;
-  animation: text-bounce 0.6s ease-in-out infinite;
-  will-change: transform;
+  display: inline-block;
+  animation: letter-wave 0.6s ease-in-out infinite;
 }
-/* 横移動（右外→左外） */
+.loading-text span:nth-child(1) { animation-delay: 0s; }
+.loading-text span:nth-child(2) { animation-delay: 0.05s; }
+.loading-text span:nth-child(3) { animation-delay: 0.1s; }
+.loading-text span:nth-child(4) { animation-delay: 0.15s; }
+.loading-text span:nth-child(5) { animation-delay: 0.2s; }
+.loading-text span:nth-child(6) { animation-delay: 0.25s; }
+.loading-text span:nth-child(7) { animation-delay: 0.3s; }
+.loading-text span:nth-child(8) { animation-delay: 0.35s; }
+.loading-text span:nth-child(9) { animation-delay: 0.4s; }
+
+/* 横移動 */
 @keyframes move-left-3s {
-  from { transform: translateY(-50%) translateX(110%); }
+  from { transform: translateY(-50%) translateX(130%); }
   to   { transform: translateY(-50%) translateX(-10%); }
 }
-/* トラックのボブ（上下ゆれ） */
+
+/* トラックの上下揺れ */
 @keyframes truck-bob {
   0%   { transform: translateY(0)      rotate(0deg); }
   25%  { transform: translateY(-10px)  rotate(-0.5deg); }
@@ -479,14 +503,16 @@ input[type="password"]:focus {
   75%  { transform: translateY(10px)   rotate(0.5deg); }
   100% { transform: translateY(0)      rotate(0deg); }
 }
-/* 文字のバウンス（控えめ） */
-@keyframes text-bounce {
+
+/* 文字の波打ち */
+@keyframes letter-wave {
   0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  50%      { transform: translateY(-8px); }
 }
-/* モーション軽減（個別） */
+
+/* モーション軽減 */
 @media (prefers-reduced-motion: reduce) {
-  .moving-group, .truck-img, .loading-text {
+  .moving-group, .truck-img, .loading-text span {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
   }
