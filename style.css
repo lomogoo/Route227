@@ -783,35 +783,55 @@ input[type="password"]:focus {
   overflow: visible; /* トラックが少しはみ出しても見えるように */
 }
 
-/* バーの塗り部分（3秒で100%） */
 .progress-fill {
   position: absolute;
   top: 0;
-  left: 0;
+  right: 0;         /* ← 右端を基準にする */
+  left: auto;
   height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #E76F51, #F2CC8F);
+  width: 100%;
+  background: linear-gradient(90deg, #F2CC8F, #E76F51); /* 逆方向でも映える配色 */
   border-radius: inherit;
-  animation: fill-bar 3s linear forwards;
+  animation: drain-bar-rtl 3s linear forwards;
+  will-change: width;
 }
 
-/* トラック（塗りの先頭に同期） */
+@keyframes drain-bar-rtl {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* トラック：右端→左端へ移動しつつ、軽く上下にボブ */
 .truck-on-bar {
   position: absolute;
   top: 50%;
-  left: 0%;
-  transform: translate(-50%, -50%);
-  height: 40px;  /* 小さめ */
+  left: 100%;                               /* 右端スタート */
+  transform: translate(-50%, -50%);         /* 中央基準を維持 */
+  height: 40px;
   width: auto;
   filter: drop-shadow(0 6px 10px rgba(0,0,0,0.12));
-  animation: move-truck 3s linear forwards;
+  animation: move-truck-bob 3s linear forwards;
+  will-change: left, transform;
 }
 
 /* 進捗アニメーション */
 @keyframes fill-bar { to { width: 100%; } }
 @keyframes move-truck { to { left: 100%; } }
 
-/* モーション軽減個別対応（全体設定もあるが念のため） */
+/* 横方向は linear、縦方向はキーフレームでふわっと上下 */
+@keyframes move-truck-bob {
+  0%   { left: 100%; transform: translate(-50%, -50%) translateY(0px); }
+  12.5%{ left: 87.5%; transform: translate(-50%, -50%) translateY(-3px); }
+  25%  { left: 75%;   transform: translate(-50%, -50%) translateY(0px); }
+  37.5%{ left: 62.5%; transform: translate(-50%, -50%) translateY(3px); }
+  50%  { left: 50%;   transform: translate(-50%, -50%) translateY(0px); }
+  62.5%{ left: 37.5%; transform: translate(-50%, -50%) translateY(-3px); }
+  75%  { left: 25%;   transform: translate(-50%, -50%) translateY(0px); }
+  87.5%{ left: 12.5%; transform: translate(-50%, -50%) translateY(3px); }
+  100% { left: 0%;    transform: translate(-50%, -50%) translateY(0px); }
+}
+
+/* モーション軽減（全体設定とは別に個別にも効かせる） */
 @media (prefers-reduced-motion: reduce) {
   .progress-fill, .truck-on-bar {
     animation-duration: 1ms !important;
