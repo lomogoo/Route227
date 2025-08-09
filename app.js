@@ -28,6 +28,42 @@ const appData = {
 
 /* 3) メイン処理 */
 document.addEventListener('DOMContentLoaded', () => {
+  // ====== 追加: 再訪時はローダーを出さない（map.html/account.htmlからの戻りも対象） ======
+  const params = new URLSearchParams(location.search);
+  const cameFromInternal = (() => {
+    try {
+      const ref = document.referrer ? new URL(document.referrer) : null;
+      return !!(ref && ref.origin === location.origin && /\/(map|account)\.html$/.test(ref.pathname));
+    } catch { return false; }
+  })();
+  const alreadyVisited = sessionStorage.getItem('visited') === '1';
+  const noLoaderFlag = params.get('noLoader') === '1'; // 予備フラグ（必要に応じてリンク側で付与可）
+  const skipInitialLoader = alreadyVisited || cameFromInternal || noLoaderFlag;
+
+  // 初回訪問マーク（このページに一度来たら以後はローダーを表示しない）
+  try { sessionStorage.setItem('visited', '1'); } catch {}
+
+  // URLのredirect=login-requiredにも対応（トースト表示してパラメータを消す）
+  if (params.get('redirect') === 'login-required') {
+    // showToastは後述で定義されるが、ここでも呼べるようフォールバック
+    const instantToast = (msg, type='warning', duration=3500) => {
+      const el = document.getElementById('toast-notification');
+      if (!el) return alert(msg);
+      el.textContent = msg;
+      el.className = `toast-${type} show`;
+      setTimeout(()=> el.classList.remove('show'), duration);
+    };
+    const msg = 'ログインが必要です。サインインしてからもう一度お試しください';
+    // DOMが軽く立ち上がるのを待ってから表示
+    setTimeout(() => {
+      if (typeof showToast === 'function') showToast(msg, 'warning', 4000);
+      else instantToast(msg, 'warning', 4000);
+    }, 50);
+    params.delete('redirect');
+    history.replaceState({}, document.title, location.pathname);
+  }
+  // ====== 追加ここまで ======
+
   // アプリ入場時のローディング開始時刻（最低3秒表示するため）
   const appEntryStart = Date.now();
   setupStaticEventListeners();
@@ -51,14 +87,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isInitialAuthCheckDone) {
       isInitialAuthCheckDone = true;
       const appLoader = document.getElementById('app-loader');
-      // 初回は必ず3秒間ローディングを表示
-      const elapsed = Date.now() - appEntryStart;
-      const remaining = Math.max(3000 - elapsed, 0);
-      setTimeout(() => {
-          if (appLoader.classList.contains('active')) {
-              appLoader.classList.remove('active');
+
+      // ====== 修正: 初回のみ最低3秒ローダー。再訪/内部から戻りは即オフ ======
+      if (skipInitialLoader) {
+        if (appLoader?.classList.contains('active')) appLoader.classList.remove('active');
+      } else {
+        // 初回は必ず3秒間ローディングを表示
+        const elapsed = Date.now() - appEntryStart;
+        const remaining = Math.max(3000 - elapsed, 0);
+        setTimeout(() => {
+          if (appLoader?.classList.contains('active')) {
+            appLoader.classList.remove('active');
           }
-      }, remaining);
+        }, remaining);
+      }
+      // ====== ここまで修正 ======
 
       try {
         let initialSection = 'feed-section'; // デフォルト
@@ -80,22 +123,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // ポップアップ表示のチェックを実行
         checkAndShowWelcomePopup();
 
-        // ▼ 追加: アカウントページから未ログインで戻された場合のトースト／モーダル表示
+        // ▼ 既存: ローカルストレージ経由のリダイレクト理由・ログインモーダル
         const redirectMsg = localStorage.getItem('loginRedirectMessage');
         if (redirectMsg) {
-          // 理由をトーストで表示
           showToast(redirectMsg, 'warning', 4000);
           localStorage.removeItem('loginRedirectMessage');
         }
         const shouldOpenLogin = localStorage.getItem('showLoginModal') === 'true';
         if (shouldOpenLogin) {
           const loginModal = document.getElementById('login-modal');
-          if (loginModal) {
-            openModal(loginModal);
-          }
+          if (loginModal) openModal(loginModal);
           localStorage.removeItem('showLoginModal');
         }
-        // ▲ ここまで追加
+        // ▲ 既存
 
       } catch (error) {
         console.error("[INIT] Critical error during initial load:", error);
