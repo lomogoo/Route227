@@ -163,17 +163,14 @@
     </div>
   </div>
 
-  <!-- 必要なら、Supabase の設定を index.html 側でグローバルに持たせてください（例） -->
-  <!--
+  <!-- Supabase: ライブラリ読込＆環境設定（あなたの値を設定済み） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    window.SUPABASE_URL = "https://xxxxxxxx.supabase.co";
-    window.SUPABASE_ANON_KEY = "xxxxxxxxxxxxxxxxxxxxxxxx";
+    window.SUPABASE_URL = "https://hccairtzksnnqdujalgv.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k";
   </script>
-  -->
 
-  <!-- あなたの環境で supabase-js を読み込んでいる場合はそのままにしてください -->
-  <!-- <script src="https://unpkg.com/@supabase/supabase-js@2"></script> -->
-
+  <!-- App -->
   <script src="./app.js"></script>
 </body>
 </html>
