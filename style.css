@@ -771,3 +771,71 @@ input[type="password"]:focus {
 ::-webkit-scrollbar-track { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
+
+/* === 追加：汎用コンテナ（現HTMLが .container を使用） === */
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* === 改良：フッターNavにセーフエリア対応 === */
+.footer-nav {
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
+}
+
+/* === 改良：ボディ下余白も安全に（被り防止・既にあるpbに上乗せOK） === */
+body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+/* === 追加：ヘッダー影（スクロール時に付与する .elevated 用） === */
+.app-header.elevated { box-shadow: var(--shadow-md); }
+
+/* === 改良：カテゴリタブをヘッダーの直下で追従（モバイル快適） === */
+#feed-section .category-tabs {
+  position: sticky;
+  top: 72px;            /* ヘッダー高に合わせる */
+  z-index: 50;
+  background: rgba(253,251,247,0.9);
+  backdrop-filter: blur(8px);
+}
+
+/* === 改良：記事サムネの比率固定でCLS削減 === */
+.image-container {
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+
+/* === 追加：スケルトンプレースホルダー === */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #eee;
+  border-radius: var(--radius-lg);
+}
+.skeleton::after {
+  content: "";
+  position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer { 100% { transform: translateX(100%);} }
+
+/* === 改良：フォーカスリング（見やすく） === */
+:where(.btn, .nav-link, .article-link):focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--color-primary) 70%, white);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+/* === 追加：ボタンのローディング状態ユーティリティ === */
+.btn.is-loading { pointer-events: none; opacity: .7; }
+.btn.is-loading::after {
+  content: ""; width: 16px; height: 16px; margin-left: 8px;
+  border-radius: 50%; border: 2px solid currentColor; border-top-color: transparent;
+  animation: spin .8s linear infinite;
+}
+
+/* === 追加：モーダルの最大幅微調整（狭小端末での視認性UP） === */
+.modal-content { max-width: 520px; }
