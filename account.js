@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionError || !session) {
       console.error('セッションの取得に失敗しました。');
       // ログインページにリダイレクト
-      window.location.href = 'index.html';
+      window.location.href = 'index.html?redirect=login-required';
       return;
     }
 
