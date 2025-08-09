@@ -29,10 +29,12 @@
 <div id="toast-notification"></div>
   
 <div id="app-loader" class="app-loader active" aria-live="polite">
-  <div class="truck-progress-loader">
-    <div class="progress-track">
-      <div class="progress-fill"></div>
-      <img class="truck-on-bar" src="assets/truck.png" alt="" aria-hidden="true" />
+  <div class="truck-follow-loader" role="status" aria-label="読み込み中">
+    <div class="follow-track">
+      <div class="moving-group">
+        <img class="truck-img" src="assets/truck.png" alt="" aria-hidden="true" />
+        <span class="loading-text" aria-hidden="true">loading...</span>
+      </div>
     </div>
   </div>
 </div>
