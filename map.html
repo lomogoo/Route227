@@ -14,8 +14,11 @@
     crossorigin=""
   />
   <style>
-    /* ヘッダー＆フッターを除いた高さに */
-    #map { width: 100%; height: calc(100dvh - 65px - 64px); background:#f2efe9; }
+    /* indexのUIに合わせて：本文の余白はゼロに近く */
+    main { padding: 0; }
+    /* 地図はJSで高さを決めるので初期値だけ */
+    #map { width: 100%; height: 60vh; background:#f2efe9; }
+
     /* 丸サムネマーカー */
     .thumb-marker{
       width:38px;height:38px;border-radius:50%;
@@ -23,6 +26,7 @@
       border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2);
     }
     .thumb-marker--fallback{display:grid;place-items:center;font-size:18px;color:#999;background:#fff}
+
     /* ポップアップをカード風に */
     .leaflet-popup-content-wrapper{border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
     .leaflet-popup-content{margin:0;padding:0;overflow:hidden;max-width:320px}
@@ -36,7 +40,7 @@
 </head>
 <body>
   <div id="app-root">
-    <!-- index.html と同じロゴ（画像）を使う -->
+    <!-- ヘッダー（index.htmlと同じロゴ） -->
     <header class="app-header">
       <div class="header-container">
         <div class="logo">
@@ -47,21 +51,14 @@
       </div>
     </header>
 
+    <!-- 本文：カード無しで全画面マップ -->
     <main>
       <section class="section active" id="map-section">
-        <div class="card">
-          <div class="card-header">
-            <h2>イベントマップ（仙台）</h2>
-            <p>サムネの丸をタップすると詳細が表示されます</p>
-          </div>
-          <div class="card-body" style="padding:0">
-            <div id="map" role="region" aria-label="イベント地図"></div>
-          </div>
-        </div>
+        <div id="map" role="region" aria-label="イベント地図"></div>
       </section>
     </main>
 
-    <!-- フッター：Feed / QR / アカウント / マップ（active） -->
+    <!-- ▼ フッター（index.htmlと同じ並び＆アイコン） -->
     <footer class="footer-nav" role="navigation" aria-label="メイン">
       <a class="nav-link" href="index.html">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -75,22 +72,21 @@
         </svg>
         QR
       </a>
-      <!-- ✅ アカウント追加 -->
       <a class="nav-link" href="account.html">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="12" cy="7" r="4"/><path d="M6 21a6 6 0 0 1 12 0"/>
         </svg>
         アカウント
       </a>
-      <!-- ✅ マップに“適当なSVG”をアイコンとして追加（ピン＋丸） -->
       <a class="nav-link active" href="map.html" aria-current="page">
+        <!-- 適当な地図SVG -->
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/>
-          <circle cx="12" cy="10" r="3"/>
+          <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/>
         </svg>
         マップ
       </a>
     </footer>
+    <!-- ▲ フッター -->
   </div>
 
   <!-- Leaflet / Supabase -->
@@ -110,11 +106,35 @@
     );
 
     // Leaflet
-    const MAP_CENTER = [38.2682, 140.8694]; // 仙台
-    const map = L.map('map', { zoomControl:true, attributionControl:true }).setView(MAP_CENTER, 12);
+    const map = L.map('map', { zoomControl:true, attributionControl:true }).setView([38.2682, 140.8694], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution:'&copy; OpenStreetMap contributors'
     }).addTo(map);
+
+    // ==== 端末に応じて地図の高さを動的調整（フッターにかぶらない） ====
+    function setMapHeight() {
+      const header = document.querySelector('.app-header');
+      const footer = document.querySelector('.footer-nav');
+      const H = window.innerHeight;
+      const hHeader = header ? header.getBoundingClientRect().height : 0;
+      const hFooter = footer ? footer.getBoundingClientRect().height : 0;
+      // style.css の body に padding-bottom: 80px; がある前提 → それも考慮して引く
+      const bodyPadBottom = parseFloat(getComputedStyle(document.body).paddingBottom || '0') || 0;
+
+      // 画面高 - ヘッダー - フッター（固定） - ボディ下パディング（下余白）
+      const mapHeight = Math.max(220, H - hHeader - hFooter - bodyPadBottom);
+      document.getElementById('map').style.height = mapHeight + 'px';
+
+      // Leafletに再レイアウトを通知
+      setTimeout(()=> map.invalidateSize(), 50);
+    }
+    window.addEventListener('resize', setMapHeight);
+    window.addEventListener('orientationchange', setMapHeight);
+    // iOS Safariなどでの復帰時
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(setMapHeight, 200); });
+
+    // 初回実行
+    setMapHeight();
 
     // 住所→座標
     async function geocodeAddress(address){
@@ -197,7 +217,9 @@
         m.bindPopup(popupHtml(ev), { maxWidth: 360, minWidth: 260 });
         bounds.extend([lat,lng]);
       }
-      if(bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] }); else map.setView(MAP_CENTER, 12);
+      if(bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] }); else map.setView([38.2682,140.8694], 12);
+      // 高さ調整後のサイズ確定
+      setTimeout(()=> map.invalidateSize(), 100);
     }
 
     function escapeHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
@@ -209,7 +231,6 @@
       else{ await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
 
     render();
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(()=> map.invalidateSize(), 300); });
   </script>
 </body>
 </html>
