@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>イベントマップ</title>
-  <link rel="stylesheet" href="style.css?v=1.0.3"/>
-
+  <title>イベントマップ - Route227 App</title>
+  <link rel="stylesheet" href="style.css?v=1.0.3" />
 
   <!-- Leaflet -->
   <link
@@ -15,132 +14,95 @@
     crossorigin=""
   />
   <style>
-    /* indexのUIに合わせて：本文の余白はゼロに近く */
     main { padding: 0; }
-    /* 地図はJSで高さを決めるので初期値だけ */
     #map { width: 100%; height: 60vh; background:#f2efe9; }
-
-    /* 丸サムネマーカー */
-    .thumb-marker{
-      width:38px;height:38px;border-radius:50%;
-      background-size:cover;background-position:center;background-color:#fff;
-      border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2);
-    }
-    .thumb-marker--fallback{display:grid;place-items:center;font-size:18px;color:#999;background:#fff}
-
-    /* ポップアップをカード風に */
-    .leaflet-popup-content-wrapper{border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
-    .leaflet-popup-content{margin:0;padding:0;overflow:hidden;max-width:320px}
-    .event-card__image{width:100%;height:160px;object-fit:cover;background:#eee;display:block}
-    .event-card__body{padding:12px 14px 14px;display:grid;gap:6px}
-    .event-card__title{font-weight:700;font-size:16px;margin:0}
-    .event-card__meta{font-size:12px;color:#6c757d;display:grid;gap:2px}
-    .event-card__desc{font-size:13px;line-height:1.5;margin:4px 0 0;white-space:pre-line}
-    .event-card__actions{display:flex;gap:8px;padding:0 14px 12px}
+    .thumb-marker{ width:38px;height:38px;border-radius:50%; background-size:cover;background-position:center;background-color:#fff; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2); }
+    .thumb-marker--fallback{ display:grid;place-items:center;font-size:18px;color:#999;background:#fff }
+    .leaflet-popup-content-wrapper{ border-radius:var(--radius-lg); box-shadow:var(--shadow-lg) }
+    .leaflet-popup-content{ margin:0; padding:0; overflow:hidden; max-width:320px }
+    .event-card__image{ width:100%; height:160px; object-fit:cover; background:#eee; display:block }
+    .event-card__body{ padding:12px 14px 14px; display:grid; gap:6px }
+    .event-card__title{ font-weight:700; font-size:16px; margin:0 }
+    .event-card__meta{ font-size:12px; color:#6c757d; display:grid; gap:2px }
+    .event-card__desc{ font-size:13px; line-height:1.5; margin:4px 0 0; white-space:pre-line }
+    .event-card__actions{ display:flex; gap:8px; padding:0 14px 12px }
   </style>
 </head>
 <body>
   <div id="app-root">
-    <!-- ヘッダー（index.htmlと同じロゴ） -->
+    <!-- ▼ ヘッダー：index.htmlと同一構造・クラス -->
     <header class="app-header">
-      <div class="header-container">
+      <div class="container header-container">
         <div class="logo">
-          <img class="logo-icon" src="assets/truck.png" alt="" />
+          <img src="assets/truck.png" alt="Route 227 トラックロゴ" class="logo-icon" />
           <span class="logo-text">Route 227</span>
         </div>
-        <nav class="header-actions"></nav>
+        <div class="header-actions">
+          <a href="https://www.instagram.com/route227/" target="_blank" rel="noopener noreferrer" class="header-icon-link" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          <div id="user-status"></div>
+        </div>
       </div>
     </header>
 
-    <!-- 本文：カード無しで全画面マップ -->
-    <main>
+    <!-- ▼ 本文：全画面マップ -->
+    <main class="app-content">
       <section class="section active" id="map-section">
         <div id="map" role="region" aria-label="イベント地図"></div>
       </section>
     </main>
 
-    <!-- ▼ フッター（index.htmlと同じ並び＆アイコン） -->
- <footer class="footer-nav">
+    <!-- ▼ フッター：index.htmlのアイコン・順序・クラスを踏襲 -->
+    <footer class="footer-nav">
       <a href="index.html#feed-section" class="nav-link">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         <span>フィード</span>
       </a>
-
-
-      <a href="map.html" class="nav-link">
-  <svg width="24" height="24"><use href="#icon-map" /></svg>
-  マップ
-</a>
-
-      
+      <a href="map.html" class="nav-link active">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M12 22s-6-4.5-6-10a6 6 0 1 1 12 0c0 5.5-6 10-6 10z"/><circle cx="12" cy="12" r="2.5"/></svg>
+        マップ
+      </a>
       <a href="index.html#foodtruck-section" class="nav-link">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-      viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-      class="lucide lucide-map-icon lucide-map">
-      <path d="M12 22s-6-4.5-6-10a6 6 0 1 1 12 0c0 5.5-6 10-6 10z"/>
-      <circle cx="12" cy="12" r="2.5"/>
-    </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stamp-icon lucide-stamp"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>
         <span>スタンプ</span>
       </a>
-
-      <a href="account.html" class="nav-link active">
+      <a href="account.html" class="nav-link">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         <span>アカウント</span>
       </a>
-  
-</footer>
-    <!-- ▲ フッター -->
+    </footer>
   </div>
 
   <!-- Leaflet / Supabase -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
   <script>
-    // Supabase
     const { createClient } = window.supabase;
     const supabase = createClient(
       'https://hccairtzksnnqdujalgv.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k'
     );
 
-    // Leaflet
     const map = L.map('map', { zoomControl:true, attributionControl:true }).setView([38.2682, 140.8694], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution:'&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
 
-    // ==== 端末に応じて地図の高さを動的調整（フッターにかぶらない） ====
-    function setMapHeight() {
+    function setMapHeight(){
       const header = document.querySelector('.app-header');
       const footer = document.querySelector('.footer-nav');
       const H = window.innerHeight;
       const hHeader = header ? header.getBoundingClientRect().height : 0;
       const hFooter = footer ? footer.getBoundingClientRect().height : 0;
-      // style.css の body に padding-bottom: 80px; がある前提 → それも考慮して引く
       const bodyPadBottom = parseFloat(getComputedStyle(document.body).paddingBottom || '0') || 0;
-
-      // 画面高 - ヘッダー - フッター（固定） - ボディ下パディング（下余白）
       const mapHeight = Math.max(220, H - hHeader - hFooter - bodyPadBottom);
       document.getElementById('map').style.height = mapHeight + 'px';
-
-      // Leafletに再レイアウトを通知
       setTimeout(()=> map.invalidateSize(), 50);
     }
     window.addEventListener('resize', setMapHeight);
     window.addEventListener('orientationchange', setMapHeight);
-    // iOS Safariなどでの復帰時
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(setMapHeight, 200); });
-
-    // 初回実行
     setMapHeight();
 
-    // 住所→座標
     async function geocodeAddress(address){
       if(!address) return null;
       const url = new URL('https://nominatim.openstreetmap.org/search');
@@ -149,7 +111,7 @@
       url.searchParams.set('countrycodes','jp');
       url.searchParams.set('limit','1');
       url.searchParams.set('accept-language','ja');
-      url.searchParams.set('email','example@example.com'); // ←差し替え推奨
+      url.searchParams.set('email','example@example.com');
       try{
         const res = await fetch(url.toString(), { headers:{Accept:'application/json'} });
         if(!res.ok) return null;
@@ -164,15 +126,9 @@
       try{ await supabase.from('events').update({ lat, lng }).eq('id', id); }
       catch(e){ console.warn('lat/lng保存失敗:', e); }
     }
-
     function icon(url){
-      return url ? L.divIcon({
-        className:'', html:`<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`,
-        iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16]
-      }) : L.divIcon({
-        className:'', html:`<div class="thumb-marker thumb-marker--fallback">📍</div>`,
-        iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16]
-      });
+      return url ? L.divIcon({ className:'', html:`<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`, iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16] })
+                 : L.divIcon({ className:'', html:`<div class="thumb-marker thumb-marker--fallback">📍</div>`, iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16] });
     }
     function popupHtml(ev){
       const s = fmt(ev.start_time), e = fmt(ev.end_time);
@@ -193,11 +149,10 @@
           </div>
           <div class="event-card__actions">
             ${addr ? `<button class="btn" onclick="openInMaps('${encodeURIComponent(ev.address)}')">地図アプリで開く</button>` : ''}
-            <button class="btn btn--primary" onclick="shareEvent('${encodeURIComponent(ev.title||'イベント')}', '${encodeURIComponent(location.href)}')">共有</button>
+            <button class="btn btn-primary" onclick="shareEvent('${encodeURIComponent(ev.title||'イベント')}', '${encodeURIComponent(location.href)}')">共有</button>
           </div>
         </article>`;
     }
-
     async function fetchEvents(){
       const { data, error } = await supabase
         .from('events')
@@ -206,7 +161,6 @@
       if(error){ console.error(error); return []; }
       return data||[];
     }
-
     async function render(){
       const evs = await fetchEvents();
       const bounds = L.latLngBounds();
@@ -222,18 +176,12 @@
         bounds.extend([lat,lng]);
       }
       if(bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] }); else map.setView([38.2682,140.8694], 12);
-      // 高さ調整後のサイズ確定
       setTimeout(()=> map.invalidateSize(), 100);
     }
-
     function escapeHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
-    function fmt(iso){ if(!iso) return ''; const d=new Date(iso);
-      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+    function fmt(iso){ if(!iso) return ''; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
     window.openInMaps = (enc)=>{ const addr=decodeURIComponent(enc); open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`,'_blank'); };
-    window.shareEvent = async (t,u)=>{ const title=decodeURIComponent(t), url=decodeURIComponent(u);
-      if(navigator.share){ try{ await navigator.share({title,url}); }catch{} }
-      else{ await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
-
+    window.shareEvent = async (t,u)=>{ const title=decodeURIComponent(t), url=decodeURIComponent(u); if(navigator.share){ try{ await navigator.share({title,url}); }catch{} } else{ await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
     render();
   </script>
 </body>
