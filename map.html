@@ -78,15 +78,22 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
   <script>
+    // =========================
+    // Supabase 初期化
+    // =========================
     const { createClient } = window.supabase;
     const supabase = createClient(
       'https://hccairtzksnnqdujalgv.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjY2FpcnR6a3NubnFkdWphbGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkyNjI2MTYsImV4cCI6MjA2NDgzODYxNn0.TVDucIs5ClTWuykg_fy4yv65Rg-xbSIPFIfvIYawy_k'
     );
 
+    // =========================
+    // Leaflet 初期化
+    // =========================
     const map = L.map('map', { zoomControl:true, attributionControl:true }).setView([38.2682, 140.8694], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
 
+    // 端末に応じて高さ調整（フッターにかぶらない）
     function setMapHeight(){
       const header = document.querySelector('.app-header');
       const footer = document.querySelector('.footer-nav');
@@ -103,6 +110,50 @@
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) setTimeout(setMapHeight, 200); });
     setMapHeight();
 
+    // =========================
+    // JSTの「今日」範囲（00:00〜23:59:59.999）をUTC ISOで返す
+    // =========================
+    function getTodayRangeJstIso() {
+      const now = new Date();
+      const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+      const startJst = new Date(Date.UTC(
+        jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 0, 0, 0, 0
+      ));
+      const endJst = new Date(Date.UTC(
+        jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 23, 59, 59, 999
+      ));
+      return { startIso: startJst.toISOString(), endIso: endJst.toISOString() };
+    }
+
+    // =========================
+    // 今日開催中のイベントのみ取得
+    // （DB側で粗く「今日とかぶる」を絞り、最後にクライアントで「今まさに開催中」を厳密判定）
+    // =========================
+    async function fetchTodaysOngoingEvents(){
+      const { startIso, endIso } = getTodayRangeJstIso();
+      const nowIso = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('id,title,description,address,lat,lng,start_time,end_time,thumbnail_url')
+        .lte('start_time', endIso)                        // 開始が今日の終わり以前
+        .or(`end_time.is.null,end_time.gte.${startIso}`)  // 終了未設定 or 今日の始まり以降
+        .order('start_time', { ascending:true });
+
+      if (error) { console.error(error); return []; }
+
+      return (data || []).filter(ev => {
+        const st = ev.start_time ? new Date(ev.start_time).toISOString() : null;
+        const en = ev.end_time ? new Date(ev.end_time).toISOString() : null;
+        const started = st ? (st <= nowIso) : true;   // start未設定なら許容
+        const notEnded = !en || (en >= nowIso);       // end未設定 or 未来
+        return started && notEnded;
+      });
+    }
+
+    // =========================
+    // 補助: 住所のジオコーディング & lat/lngキャッシュ
+    // =========================
     async function geocodeAddress(address){
       if(!address) return null;
       const url = new URL('https://nominatim.openstreetmap.org/search');
@@ -111,7 +162,7 @@
       url.searchParams.set('countrycodes','jp');
       url.searchParams.set('limit','1');
       url.searchParams.set('accept-language','ja');
-      url.searchParams.set('email','example@example.com');
+      url.searchParams.set('email','example@example.com'); // ←適切なメールに差し替え推奨
       try{
         const res = await fetch(url.toString(), { headers:{Accept:'application/json'} });
         if(!res.ok) return null;
@@ -126,6 +177,10 @@
       try{ await supabase.from('events').update({ lat, lng }).eq('id', id); }
       catch(e){ console.warn('lat/lng保存失敗:', e); }
     }
+
+    // =========================
+    // マーカー表示
+    // =========================
     function icon(url){
       return url ? L.divIcon({ className:'', html:`<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`, iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16] })
                  : L.divIcon({ className:'', html:`<div class="thumb-marker thumb-marker--fallback">📍</div>`, iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16] });
@@ -153,35 +208,44 @@
           </div>
         </article>`;
     }
-    async function fetchEvents(){
-      const { data, error } = await supabase
-        .from('events')
-        .select('id,title,description,address,lat,lng,start_time,end_time,thumbnail_url')
-        .order('start_time', { ascending:true });
-      if(error){ console.error(error); return []; }
-      return data||[];
-    }
+
+    // =========================
+    // レンダリング本体
+    // =========================
     async function render(){
-      const evs = await fetchEvents();
+      const evs = await fetchTodaysOngoingEvents();
       const bounds = L.latLngBounds();
-      for(const ev of evs){
+
+      for (const ev of evs){
         let { lat, lng } = ev;
-        if((lat==null || lng==null) && ev.address){
+        if ((lat==null || lng==null) && ev.address){
           const c = await geocodeAddress(ev.address);
           if(c){ lat=c[0]; lng=c[1]; maybeCacheLatLng(ev.id, lat, lng); await new Promise(r=>setTimeout(r,250)); }
         }
-        if(lat==null || lng==null) continue;
+        if (lat==null || lng==null) continue;
+
         const m = L.marker([lat,lng], { icon: icon(ev.thumbnail_url) }).addTo(map);
         m.bindPopup(popupHtml(ev), { maxWidth: 360, minWidth: 260 });
         bounds.extend([lat,lng]);
       }
-      if(bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] }); else map.setView([38.2682,140.8694], 12);
+
+      if (bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] });
+      else {
+        console.info('今日の開催中イベントはありません');
+        map.setView([38.2682,140.8694], 12);
+      }
       setTimeout(()=> map.invalidateSize(), 100);
     }
+
+    // =========================
+    // ヘルパー
+    // =========================
     function escapeHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
     function fmt(iso){ if(!iso) return ''; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
     window.openInMaps = (enc)=>{ const addr=decodeURIComponent(enc); open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`,'_blank'); };
     window.shareEvent = async (t,u)=>{ const title=decodeURIComponent(t), url=decodeURIComponent(u); if(navigator.share){ try{ await navigator.share({title,url}); }catch{} } else{ await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
+
+    // 実行
     render();
   </script>
 </body>
