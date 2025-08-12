@@ -16,21 +16,29 @@
   <style>
     main { padding: 0; }
     #map { width: 100%; height: 60vh; background:#f2efe9; }
-    .thumb-marker{ width:38px;height:38px;border-radius:50%; background-size:cover;background-position:center;background-color:#fff; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2); }
-    .thumb-marker--fallback{ display:grid;place-items:center;font-size:18px;color:#999;background:#fff }
-    .leaflet-popup-content-wrapper{ border-radius:var(--radius-lg); box-shadow:var(--shadow-lg) }
-    .leaflet-popup-content{ margin:0; padding:0; overflow:hidden; max-width:320px }
-    .event-card__image{ width:100%; height:160px; object-fit:cover; background:#eee; display:block }
-    .event-card__body{ padding:12px 14px 14px; display:grid; gap:6px }
-    .event-card__title{ font-weight:700; font-size:16px; margin:0 }
-    .event-card__meta{ font-size:12px; color:#6c757d; display:grid; gap:2px }
-    .event-card__desc{ font-size:13px; line-height:1.5; margin:4px 0 0; white-space:pre-line }
-    .event-card__actions{ display:flex; gap:8px; padding:0 14px 12px }
+
+    /* 丸サムネマーカー */
+    .thumb-marker{
+      width:38px;height:38px;border-radius:50%;
+      background-size:cover;background-position:center;background-color:#fff;
+      border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.2);
+    }
+    .thumb-marker--fallback{display:grid;place-items:center;font-size:18px;color:#999;background:#fff}
+
+    /* ポップアップをカード風に */
+    .leaflet-popup-content-wrapper{border-radius:var(--radius-lg);box-shadow:var(--shadow-lg)}
+    .leaflet-popup-content{margin:0;padding:0;overflow:hidden;max-width:320px}
+    .event-card__image{width:100%;height:160px;object-fit:cover;background:#eee;display:block}
+    .event-card__body{padding:12px 14px 14px;display:grid;gap:6px}
+    .event-card__title{font-weight:700;font-size:16px;margin:0}
+    .event-card__meta{font-size:12px;color:#6c757d;display:grid;gap:2px}
+    .event-card__desc{font-size:13px;line-height:1.5;margin:4px 0 0;white-space:pre-line}
+    .event-card__actions{display:flex;gap:8px;padding:0 14px 12px}
   </style>
 </head>
 <body>
   <div id="app-root">
-    <!-- ▼ ヘッダー：index.htmlと同一構造・クラス -->
+    <!-- ▼ ヘッダー（indexと同一デザイン） -->
     <header class="app-header">
       <div class="container header-container">
         <div class="logo">
@@ -53,7 +61,7 @@
       </section>
     </main>
 
-    <!-- ▼ フッター：index.htmlのアイコン・順序・クラスを踏襲 -->
+    <!-- ▼ フッター（indexと同一デザイン） -->
     <footer class="footer-nav">
       <a href="index.html#feed-section" class="nav-link">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -77,6 +85,7 @@
   <!-- Leaflet / Supabase -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
   <script>
     // =========================
     // Supabase 初期化
@@ -91,7 +100,9 @@
     // Leaflet 初期化
     // =========================
     const map = L.map('map', { zoomControl:true, attributionControl:true }).setView([38.2682, 140.8694], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution:'&copy; OpenStreetMap contributors' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution:'&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
     // 端末に応じて高さ調整（フッターにかぶらない）
     function setMapHeight(){
@@ -111,58 +122,36 @@
     setMapHeight();
 
     // =========================
-    // JSTの「今日」範囲（00:00〜23:59:59.999）をUTC ISOで返す
+    // 全イベント取得（フィルタなし）
     // =========================
-    function getTodayRangeJstIso() {
-      const now = new Date();
-      const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-      const startJst = new Date(Date.UTC(
-        jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 0, 0, 0, 0
-      ));
-      const endJst = new Date(Date.UTC(
-        jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate(), 23, 59, 59, 999
-      ));
-      return { startIso: startJst.toISOString(), endIso: endJst.toISOString() };
-    }
-
-    // =========================
-    // 今日開催中のイベントのみ取得
-    // （DB側で粗く「今日とかぶる」を絞り、最後にクライアントで「今まさに開催中」を厳密判定）
-    // =========================
-    async function fetchTodaysOngoingEvents(){
-      const { startIso, endIso } = getTodayRangeJstIso();
-      const nowIso = new Date().toISOString();
-
+    async function fetchAllEvents(){
       const { data, error } = await supabase
         .from('events')
         .select('id,title,description,address,lat,lng,start_time,end_time,thumbnail_url')
-        .lte('start_time', endIso)                        // 開始が今日の終わり以前
-        .or(`end_time.is.null,end_time.gte.${startIso}`)  // 終了未設定 or 今日の始まり以降
         .order('start_time', { ascending:true });
-
       if (error) { console.error(error); return []; }
-
-      return (data || []).filter(ev => {
-        const st = ev.start_time ? new Date(ev.start_time).toISOString() : null;
-        const en = ev.end_time ? new Date(ev.end_time).toISOString() : null;
-        const started = st ? (st <= nowIso) : true;   // start未設定なら許容
-        const notEnded = !en || (en >= nowIso);       // end未設定 or 未来
-        return started && notEnded;
-      });
+      return data || [];
     }
 
     // =========================
-    // 補助: 住所のジオコーディング & lat/lngキャッシュ
+    // 住所→座標（成功率UPのためクレンジング付）
     // =========================
+    function cleanAddress(addr) {
+      return String(addr || '')
+        .replace(/（.*?）/g, '') // 全角括弧内を削除
+        .replace(/\(.*?\)/g, '') // 半角括弧内を削除
+        .trim();
+    }
+
     async function geocodeAddress(address){
       if(!address) return null;
       const url = new URL('https://nominatim.openstreetmap.org/search');
       url.searchParams.set('format','json');
-      url.searchParams.set('q', address);
+      url.searchParams.set('q', cleanAddress(address));
       url.searchParams.set('countrycodes','jp');
       url.searchParams.set('limit','1');
       url.searchParams.set('accept-language','ja');
-      url.searchParams.set('email','example@example.com'); // ←適切なメールに差し替え推奨
+      url.searchParams.set('email','example@example.com'); // ←実在メールに差し替え推奨
       try{
         const res = await fetch(url.toString(), { headers:{Accept:'application/json'} });
         if(!res.ok) return null;
@@ -173,18 +162,25 @@
       }catch(e){ console.warn('Geocoding失敗:', e); }
       return null;
     }
+
     async function maybeCacheLatLng(id, lat, lng){
       try{ await supabase.from('events').update({ lat, lng }).eq('id', id); }
       catch(e){ console.warn('lat/lng保存失敗:', e); }
     }
 
     // =========================
-    // マーカー表示
+    // マーカー & ポップアップ
     // =========================
     function icon(url){
-      return url ? L.divIcon({ className:'', html:`<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`, iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16] })
-                 : L.divIcon({ className:'', html:`<div class="thumb-marker thumb-marker--fallback">📍</div>`, iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16] });
+      return url ? L.divIcon({
+        className:'', html:`<div class="thumb-marker" style="background-image:url('${escapeHtml(url)}')"></div>`,
+        iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16]
+      }) : L.divIcon({
+        className:'', html:`<div class="thumb-marker thumb-marker--fallback">📍</div>`,
+        iconSize:[38,38], iconAnchor:[19,19], popupAnchor:[0,-16]
+      });
     }
+
     function popupHtml(ev){
       const s = fmt(ev.start_time), e = fmt(ev.end_time);
       const when = (s && e) ? `${s} 〜 ${e}` : (s || '');
@@ -210,10 +206,10 @@
     }
 
     // =========================
-    // レンダリング本体
+    // レンダリング
     // =========================
     async function render(){
-      const evs = await fetchTodaysOngoingEvents();
+      const evs = await fetchAllEvents();
       const bounds = L.latLngBounds();
 
       for (const ev of evs){
@@ -230,10 +226,8 @@
       }
 
       if (bounds.isValid()) map.fitBounds(bounds, { padding:[40,40] });
-      else {
-        console.info('今日の開催中イベントはありません');
-        map.setView([38.2682,140.8694], 12);
-      }
+      else map.setView([38.2682,140.8694], 12);
+
       setTimeout(()=> map.invalidateSize(), 100);
     }
 
@@ -241,12 +235,16 @@
     // ヘルパー
     // =========================
     function escapeHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
-    function fmt(iso){ if(!iso) return ''; const d=new Date(iso); return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+    function fmt(iso){ if(!iso) return ''; const d=new Date(iso);
+      return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
     window.openInMaps = (enc)=>{ const addr=decodeURIComponent(enc); open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`,'_blank'); };
-    window.shareEvent = async (t,u)=>{ const title=decodeURIComponent(t), url=decodeURIComponent(u); if(navigator.share){ try{ await navigator.share({title,url}); }catch{} } else{ await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
+    window.shareEvent = async (t,u)=>{ const title=decodeURIComponent(t), url=decodeURIComponent(u);
+      if(navigator.share){ try{ await navigator.share({title,url}); }catch{} }
+      else{ await navigator.clipboard.writeText(url); alert('URLをコピーしました'); } };
 
     // 実行
     render();
   </script>
 </body>
 </html>
+
