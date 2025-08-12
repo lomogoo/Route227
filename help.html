@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>使い方・ヘルプ - Route227 App</title>
+  <meta name="theme-color" content="#F2CC8F">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- index.html と同じCSSバージョンを利用 -->
+  <link rel="stylesheet" href="style.css?v=1.0.3"/>
+</head>
+<body>
+  <div id="app-root">
+    <!-- ▼ ヘッダー（index.htmlと同一マークアップ） -->
+    <header class="app-header">
+      <div class="container header-container">
+        <div class="logo">
+          <img src="assets/truck.png" alt="Route 227 トラックロゴ" class="logo-icon">
+          <span class="logo-text">Route 227</span>
+        </div>
+        <div class="header-actions">
+          <a href="https://www.instagram.com/route227/" target="_blank" rel="noopener noreferrer" class="header-icon-link" aria-label="Instagram">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-instagram"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          </a>
+          <div id="user-status"></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      <section id="help-section" class="section active">
+        <div class="container">
+          <!-- 戻るボタン（最上部） -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-body" style="display:flex; gap:12px;">
+              <a href="index.html#feed-section" class="btn btn-secondary">← トップへ戻る</a>
+            </div>
+          </div>
+
+          <!-- スタンプカードの使い方 -->
+          <div class="card">
+            <div class="card-header">
+              <h2>スタンプカードの使い方</h2>
+              <p>227キッチンカーでのご利用方法</p>
+            </div>
+            <div class="card-body">
+              <ol style="line-height:1.8; padding-left:1.1em;">
+                <li>227キッチンカーでカレーを購入する</li>
+                <li>購入時にスタンプカードを持っていることを伝える</li>
+                <li>
+                  商品受け取り時に、アプリからスタンプ用のQRコードを読み取る
+                  <div style="margin-top:12px;">
+                    <!-- デモ用：押しても反応しないボタン（indexの見た目に合わせて） -->
+                    <button type="button" class="btn btn-primary btn-full" disabled aria-disabled="true" title="デモ用のため押しても反応しません">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/></svg>
+                      <span>QRコードをスキャン（デモ）</span>
+                    </button>
+                    <p style="font-size:12px; color:#6c757d; margin-top:8px;">※このボタンは説明用です。実際のスキャンは「スタンプ」タブから行ってください。</p>
+                  </div>
+                </li>
+                <li>スタンプが貯まったら、<strong>3個でコーヒー1杯無料</strong>、<strong>6個でカレー1杯無料</strong>になります。交換時に表示される画面をスタッフにお見せください。</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- 会員登録手順 -->
+          <div class="card">
+            <div class="card-header">
+              <h2>会員登録について</h2>
+            </div>
+            <div class="card-body">
+              <ol style="line-height:1.8; padding-left:1.1em;">
+                <li>画面右上の<strong>ログイン</strong>ボタンを押す</li>
+                <li><strong>新規登録</strong>を押す</li>
+                <li>登録したい<strong>メールアドレス</strong>を入力する</li>
+                <li><strong>パスワード</strong>を設定する</li>
+                <li><strong>登録してログイン</strong></li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- 戻るボタン（下部） -->
+          <div class="card" style="margin-top:16px;">
+            <div class="card-body" style="display:flex; gap:12px;">
+              <a href="index.html#feed-section" class="btn btn-secondary btn-full">トップへ戻る</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ▼ フッター（index.htmlと同一マークアップ）。ここでは active は付けません -->
+    <footer class="footer-nav">
+      <a href="index.html#feed-section" class="nav-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-icon lucide-house"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <span>フィード</span>
+      </a>
+      <a href="map.html" class="nav-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon lucide-map"><path d="M12 22s-6-4.5-6-10a6 6 0 1 1 12 0c0 5.5-6 10-6 10z"/><circle cx="12" cy="12" r="2.5"/></svg>
+        マップ
+      </a>
+      <a href="index.html#foodtruck-section" class="nav-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-stamp-icon lucide-stamp"><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>
+        <span>スタンプ</span>
+      </a>
+      <a href="account.html" class="nav-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span>アカウント</span>
+      </a>
+    </footer>
+  </div>
+</body>
+</html>
